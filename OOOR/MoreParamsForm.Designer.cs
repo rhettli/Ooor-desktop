@@ -68,7 +68,7 @@ namespace ooor
             this.listParams.MultiSelect = false;
             this.listParams.Name = "listParams";
             this.listParams.ShowItemToolTips = true;
-            this.listParams.Size = new System.Drawing.Size(1299, 499);
+            this.listParams.Size = new System.Drawing.Size(1299, 787);
             this.listParams.TabIndex = 1;
             this.listParams.UseCompatibleStateImageBehavior = false;
             this.listParams.View = System.Windows.Forms.View.Details;
@@ -140,7 +140,7 @@ namespace ooor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1299, 545);
+            this.ClientSize = new System.Drawing.Size(1299, 833);
             this.Controls.Add(this.listParams);
             this.Controls.Add(this.lblTip);
             this.MinimumSize = new System.Drawing.Size(640, 380);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -12,16 +13,18 @@ using ooor.Core;
 namespace ooor
 {
     /// <summary>
-    /// GitHub 加速代理结构化管理窗口：
-    ///   - 列表展示所有代理 URL（☑ 表示启用，☐ 表示禁用；测速列显示延迟）
-    ///   - 操作：新增 / 编辑 / 删除 / 启用-禁用 / 上移 / 下移
-    ///           / 测速选中 / 测速全部 / 恢复内置默认 / 打开配置文件
-    ///   - 保存：按 ListView 当前顺序写回 {ConfigRoot}\github-proxy.txt
-    ///           启用项正常行；禁用项加 "# " 前缀；文件头追加生成注释
+    /// GitHub 加速代理结构化管理窗口。
     ///
-    /// 界面布局（InitializeComponent）见 ProxyManagerForm.Designer.cs；
-    /// 事件绑定与业务逻辑在本文件——lambda / async 处理器无法被设计器序列化，
-    /// 因此统一保留在构造函数中，便于设计器重排布局时不会丢失事件。
+    /// 数据来源分两类（彼此独立）：
+    ///   - 服务器代理（ApiProxies）：从 ooor 服务端拉取，URL 只读，仅可启用/禁用，
+    ///     缓存到 {ConfigRoot}\github-proxy-api.json，24 小时自动刷新。
+    ///   - 用户自定义代理（UserProxies）：{ConfigRoot}\github-proxy.txt，可增删改。
+    ///
+    /// UI 行为：
+    ///   - 列表先显示服务器代理（描述列带"服务器"标记），再显示用户自定义代理
+    ///   - 服务器代理项：仅可启用/禁用、测速；编辑/删除/上移/下移按钮禁用
+    ///   - 用户自定义项：全部操作可用
+    ///   - 保存：用户代理写回 txt；服务器代理的启用/禁用状态写回缓存文件
     /// </summary>
     internal partial class ProxyManagerForm : LocalizedForm
     {
@@ -34,11 +37,25 @@ namespace ooor
             public bool Enabled;      // 是否启用
             public long PingMs = -1;  // 测速毫秒；-1 = 未测
             public bool PingError;    // 测速失败
+            public bool IsApi;        // true = 来自服务器（只读 URL）；false = 用户自定义
+            public string Name = "";  // 服务器代理名称（仅 IsApi=true 时有值）
         }
+
+        private Button btnRefreshApi;  // 刷新服务器代理
 
         public ProxyManagerForm()
         {
             InitializeComponent();
+
+            // 运行时创建"刷新服务器代理"按钮（设计器不加，避免序列化问题）
+            btnRefreshApi = new Button
+            {
+                Location = new Point(892, 353),
+                Size = new Size(214, 30),
+                UseVisualStyleBackColor = true,
+                TabIndex = 15,
+            };
+            Controls.Add(btnRefreshApi);
 
             // 事件
             listProxies.SelectedIndexChanged += (s, e) => UpdateButtonsEnabled();
@@ -54,11 +71,13 @@ namespace ooor
             btnPingAll.Click += async (s, e) => await PingAllAsync();
             btnReset.Click += BtnReset_Click;
             btnOpen.Click += BtnOpen_Click;
+            btnRefreshApi.Click += async (s, e) => await RefreshApiAsync(true);
 
-            // 初始加载
+            // 初始加载：先显示缓存，后台按需刷新服务器列表
             LoadItems();
             UpdateSummary();
             UpdateButtonsEnabled();
+            Shown += async (s, e) => await RefreshApiAsync(false);
         }
 
         /// <summary>按当前语言刷新窗口静态文本（标题、列头、按钮）与动态行内容（状态列、测速列、汇总）</summary>
@@ -84,6 +103,7 @@ namespace ooor
             btnPingAll.Text = L.T("pxy.btn.pingAll");
             btnReset.Text = L.T("pxy.btn.reset");
             btnOpen.Text = L.T("pxy.btn.open");
+            btnRefreshApi.Text = L.T("pxy.btn.refreshApi");
             btnOk.Text = L.T("pxy.btn.save");
             btnCancel.Text = L.T("pxy.btn.cancel");
 
@@ -103,16 +123,39 @@ namespace ooor
 
         // ============ 数据加载与显示 ============
 
+        /// <summary>
+        /// 加载列表：先显示服务器代理（缓存），再显示用户自定义代理。
+        /// 服务器列表在 Shown 时通过 RefreshApiAsync 按需刷新。
+        /// </summary>
         private void LoadItems()
         {
             listProxies.Items.Clear();
-            var proxies = GithubProxy.Proxies;
-            if (proxies == null || proxies.Count == 0)
-                proxies = GithubProxy.BuiltinProxies; // 兜底
-            foreach (var url in proxies)
+
+            // 1. 服务器代理（只读 URL，可启用/禁用）
+            foreach (var p in GithubProxy.ApiProxies)
             {
-                AddRow(new Item { Url = url, Enabled = true });
+                AddRow(new Item
+                {
+                    Url = p.Url,
+                    Name = p.Name,
+                    Enabled = p.Enabled,
+                    IsApi = true,
+                });
             }
+
+            // 2. 用户自定义代理
+            foreach (var url in GithubProxy.UserProxies)
+            {
+                AddRow(new Item { Url = url, Enabled = true, IsApi = false });
+            }
+
+            // 兜底：都没有时用内置
+            if (listProxies.Items.Count == 0)
+            {
+                foreach (var url in GithubProxy.BuiltinProxies)
+                    AddRow(new Item { Url = url, Enabled = true, IsApi = false });
+            }
+
             if (listProxies.Items.Count > 0)
             {
                 listProxies.Items[0].Selected = true;
@@ -125,6 +168,11 @@ namespace ooor
             var lvi = new ListViewItem(it.Url) { Checked = it.Enabled, Tag = it };
             lvi.SubItems.Add(it.Enabled ? L.T("pxy.state.enabled") : L.T("pxy.state.disabled"));
             lvi.SubItems.Add("-");
+            // 描述列：服务器代理显示名称+来源标记，用户代理显示"自定义"
+            string desc = it.IsApi
+                ? (string.IsNullOrEmpty(it.Name) ? L.T("pxy.src.api") : it.Name)
+                : L.T("pxy.src.user");
+            lvi.SubItems.Add(desc);
             // 禁用项用灰色显示
             if (!it.Enabled)
                 lvi.ForeColor = SystemColors.GrayText;
@@ -136,22 +184,28 @@ namespace ooor
         {
             int total = listProxies.Items.Count;
             int enabled = listProxies.Items.Cast<ListViewItem>().Count(i => i.Checked);
-            lblSummary.Text = string.Format(L.T("pxy.summary"), total, enabled);
+            int apiCount = listProxies.Items.Cast<ListViewItem>().Count(i => ((Item)i.Tag).IsApi);
+            lblSummary.Text = string.Format(L.T("pxy.summary"), total, enabled, apiCount, total - apiCount);
         }
 
         private void UpdateButtonsEnabled()
         {
             bool hasSel = listProxies.SelectedIndices.Count > 0;
-            btnEnable.Enabled = btnDisable.Enabled = btnEdit.Enabled = btnDel.Enabled = btnPingSel.Enabled = hasSel;
+            btnEnable.Enabled = btnDisable.Enabled = btnPingSel.Enabled = hasSel;
             if (hasSel)
             {
                 int idx = listProxies.SelectedIndices[0];
-                btnUp.Enabled = idx > 0;
-                btnDown.Enabled = idx < listProxies.Items.Count - 1;
+                var it = (Item)listProxies.Items[idx].Tag;
+                bool isApi = it.IsApi;
+                // 服务器代理：仅可启用/禁用、测速；不可编辑/删除/排序
+                btnEdit.Enabled = !isApi;
+                btnDel.Enabled = !isApi;
+                btnUp.Enabled = !isApi && idx > 0;
+                btnDown.Enabled = !isApi && idx < listProxies.Items.Count - 1;
             }
             else
             {
-                btnUp.Enabled = btnDown.Enabled = false;
+                btnEdit.Enabled = btnDel.Enabled = btnUp.Enabled = btnDown.Enabled = false;
             }
         }
 
@@ -161,6 +215,9 @@ namespace ooor
             it.Enabled = e.Item.Checked;
             e.Item.SubItems[1].Text = it.Enabled ? L.T("pxy.state.enabled") : L.T("pxy.state.disabled");
             e.Item.ForeColor = it.Enabled ? listProxies.ForeColor : SystemColors.GrayText;
+            // 服务器代理的启用/禁用状态立即持久化到缓存
+            if (it.IsApi)
+                GithubProxy.SetApiProxyEnabled(it.Url, it.Enabled);
             UpdateSummary();
         }
 
@@ -261,10 +318,11 @@ namespace ooor
                     L.T("pxy.msg.resetConfirm"),
                     L.T("pxy.caption.reset"), MessageBoxButtons.OKCancel, MessageBoxIcon.Question)
                 != DialogResult.OK) return;
-            listProxies.Items.Clear();
-            foreach (var url in GithubProxy.BuiltinProxies)
+            // 只清空用户自定义项，保留服务器代理
+            for (int i = listProxies.Items.Count - 1; i >= 0; i--)
             {
-                AddRow(new Item { Url = url, Enabled = true });
+                if (!((Item)listProxies.Items[i].Tag).IsApi)
+                    listProxies.Items.RemoveAt(i);
             }
             if (listProxies.Items.Count > 0)
             {
@@ -273,6 +331,64 @@ namespace ooor
             }
             UpdateSummary();
             UpdateButtonsEnabled();
+        }
+
+        // ============ 刷新服务器代理 ============
+
+        /// <summary>
+        /// 从服务器刷新代理列表。
+        /// </summary>
+        /// <param name="force">true = 强制刷新（忽略 24h 缓存）；false = 仅缓存过期时刷新</param>
+        private async Task RefreshApiAsync(bool force)
+        {
+            try
+            {
+                btnRefreshApi.Enabled = false;
+                btnRefreshApi.Text = L.T("pxy.btn.refreshing");
+                if (force)
+                    await GithubProxy.RefreshApiAsync();
+                else
+                    await GithubProxy.EnsureApiFreshAsync();
+                // 刷新后重新加载服务器部分（保留用户项的勾选状态）
+                ReloadApiItems();
+                UpdateSummary();
+                UpdateButtonsEnabled();
+            }
+            catch
+            {
+                // 失败静默（缓存里有旧数据）
+            }
+            finally
+            {
+                btnRefreshApi.Text = L.T("pxy.btn.refreshApi");
+                btnRefreshApi.Enabled = true;
+            }
+        }
+
+        /// <summary>重新加载服务器代理项，保留用户自定义项不变</summary>
+        private void ReloadApiItems()
+        {
+            // 先移除所有服务器项
+            for (int i = listProxies.Items.Count - 1; i >= 0; i--)
+            {
+                if (((Item)listProxies.Items[i].Tag).IsApi)
+                    listProxies.Items.RemoveAt(i);
+            }
+            // 在列表顶部重新插入服务器项
+            int insertIdx = 0;
+            foreach (var p in GithubProxy.ApiProxies)
+            {
+                var lvi = AddRow(new Item
+                {
+                    Url = p.Url,
+                    Name = p.Name,
+                    Enabled = p.Enabled,
+                    IsApi = true,
+                });
+                // 移到顶部
+                listProxies.Items.Remove(lvi);
+                listProxies.Items.Insert(insertIdx++, lvi);
+            }
         }
 
         private void BtnOpen_Click(object sender, EventArgs e)
@@ -429,6 +545,8 @@ namespace ooor
 
         /// <summary>
         /// 弹出管理窗口。用户点"保存" → 回调 onSaved(写入文件的完整文本)。
+        /// 仅保存用户自定义代理（IsApi=false）到 txt；服务器代理的启用/禁用状态
+        /// 已在勾选时实时写入缓存文件。
         /// 第二参数（旧的 currentText）已不再使用——结构化 UI 自行维护列表数据。
         /// </summary>
         public static bool ShowDialog(IWin32Window owner, string ignoredCurrentText, Action<string> onSaved)
@@ -437,6 +555,8 @@ namespace ooor
             {
                 if (f.ShowDialog(owner) != DialogResult.OK) return false;
 
+                // 收集用户自定义代理（按列表顺序），启用项正常行、禁用项加 # 前缀
+                var userUrls = new List<string>();
                 var sb = new StringBuilder();
                 sb.AppendLine(L.T("pxy.file.header1"));
                 sb.AppendLine(L.T("pxy.file.header2"));
@@ -445,11 +565,17 @@ namespace ooor
                 foreach (ListViewItem lvi in f.listProxies.Items)
                 {
                     var it = (Item)lvi.Tag;
+                    if (it.IsApi) continue;               // 服务器代理不写入 txt
                     if (string.IsNullOrEmpty(it.Url)) continue;
+                    userUrls.Add(it.Url);
                     string line = it.Url;
                     if (!it.Enabled) line = "# " + line;
                     sb.AppendLine(line);
                 }
+
+                // 持久化用户代理到内存缓存 + 文件
+                GithubProxy.SaveUserProxies(userUrls);
+                GithubProxy.InvalidateCombined();
 
                 onSaved?.Invoke(sb.ToString());
                 return true;
