@@ -1,0 +1,11 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Ooor-cli/Ooor-cli.csproj" Id="951418fd-da51-4eb3-a7f5-b4c1bb2cfb51" />
+  <Project Path="ooor-sqlite-mcp/ooor-sqlite-mcp.csproj" Id="7739c9ed-6df0-429b-979e-91fdf8096a1c" />
+  <Project Path="OOOR/OOOR.csproj" Id="e1de64d7-fb90-4590-9070-86ea16c852bc" />
+  <Project Path="OoorFunc/OoorFunc.csproj" Id="ffd60169-b705-4ed5-a929-bbb123cdecec" />
+</Solution>
