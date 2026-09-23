@@ -447,6 +447,7 @@
   "abt.ok": "OK",
   "abt.update.checking": "Checking for updates…",
   "abt.link": "Visit {0} for updates and downloads",
+  "abt.github": "GitHub open-source repository",
   "abt.update.failed": "Update check failed",
   "abt.update.requestUrl": "Request URL: {0}",
   "abt.update.newVersion": "New version v{0} found",

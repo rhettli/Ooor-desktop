@@ -35,6 +35,7 @@ namespace ooor
             this.lblUpdateState = new System.Windows.Forms.Label();
             this.lblUpdateInfo = new System.Windows.Forms.Label();
             this.lnkLatest = new System.Windows.Forms.LinkLabel();
+            this.lnkGitHub = new System.Windows.Forms.LinkLabel();
             this.btnOk = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
@@ -103,17 +104,27 @@ namespace ooor
             // lnkLatest
             // 
             this.lnkLatest.AutoSize = true;
-            this.lnkLatest.Location = new System.Drawing.Point(18, 412);
+            this.lnkLatest.Location = new System.Drawing.Point(18, 408);
             this.lnkLatest.Name = "lnkLatest";
             this.lnkLatest.Size = new System.Drawing.Size(152, 18);
             this.lnkLatest.TabIndex = 6;
             this.lnkLatest.TabStop = true;
             this.lnkLatest.Text = "前往官网查看更新";
             // 
+            // lnkGitHub
+            // 
+            this.lnkGitHub.AutoSize = true;
+            this.lnkGitHub.Location = new System.Drawing.Point(18, 432);
+            this.lnkGitHub.Name = "lnkGitHub";
+            this.lnkGitHub.Size = new System.Drawing.Size(62, 18);
+            this.lnkGitHub.TabIndex = 8;
+            this.lnkGitHub.TabStop = true;
+            this.lnkGitHub.Text = "GitHub";
+            // 
             // btnOk
             // 
             this.btnOk.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btnOk.Location = new System.Drawing.Point(376, 440);
+            this.btnOk.Location = new System.Drawing.Point(376, 464);
             this.btnOk.Name = "btnOk";
             this.btnOk.Size = new System.Drawing.Size(88, 30);
             this.btnOk.TabIndex = 7;
@@ -124,7 +135,7 @@ namespace ooor
             // 
             this.AcceptButton = this.btnOk;
             this.CancelButton = this.btnOk;
-            this.ClientSize = new System.Drawing.Size(480, 484);
+            this.ClientSize = new System.Drawing.Size(480, 508);
             this.Controls.Add(this.lblTitle);
             this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.lblDesc);
@@ -132,6 +143,7 @@ namespace ooor
             this.Controls.Add(this.lblUpdateState);
             this.Controls.Add(this.lblUpdateInfo);
             this.Controls.Add(this.lnkLatest);
+            this.Controls.Add(this.lnkGitHub);
             this.Controls.Add(this.btnOk);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -154,6 +166,7 @@ namespace ooor
         private System.Windows.Forms.Label lblUpdateState;
         private System.Windows.Forms.Label lblUpdateInfo;
         private System.Windows.Forms.LinkLabel lnkLatest;
+        private System.Windows.Forms.LinkLabel lnkGitHub;
         private System.Windows.Forms.Button btnOk;
     }
 }

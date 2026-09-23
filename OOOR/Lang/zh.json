@@ -447,6 +447,7 @@
   "abt.ok": "确定",
   "abt.update.checking": "正在检查更新…",
   "abt.link": "前往官网 {0} 查看更新与下载",
+  "abt.github": "GitHub 开源仓库",
   "abt.update.failed": "检查更新失败",
   "abt.update.requestUrl": "请求地址：{0}",
   "abt.update.newVersion": "发现新版本 v{0}",

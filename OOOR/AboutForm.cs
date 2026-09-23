@@ -40,6 +40,7 @@ namespace ooor
             lnkLatest.Visible = false;      // 检查出结果前不显示，避免空跳转
 
             lnkLatest.LinkClicked += (s, e) => OpenHome();
+            lnkGitHub.LinkClicked += (s, e) => OpenGitHub();
             Shown += (s, e) => _ = CheckUpdateAsync();
             FormClosed += (s, e) => { try { _cts?.Cancel(); } catch { } };
         }
@@ -56,6 +57,9 @@ namespace ooor
 
             lnkLatest.Text = string.Format(L.T("abt.link"), OoorUpdate.HomeUrl);
             lnkLatest.LinkArea = new LinkArea(0, lnkLatest.Text.Length);
+
+            lnkGitHub.Text = L.T("abt.github");
+            lnkGitHub.LinkArea = new LinkArea(0, lnkGitHub.Text.Length);
 
             RenderUpdateSection();
         }
@@ -159,6 +163,20 @@ namespace ooor
             try
             {
                 Process.Start(OoorUpdate.HomeUrl);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, string.Format(L.T("abt.msg.openBrowserFail"), ex.Message), L.T("abt.msg.caption"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        /// <summary>打开 GitHub 仓库</summary>
+        private void OpenGitHub()
+        {
+            try
+            {
+                Process.Start(OoorUpdate.GitHubUrl);
             }
             catch (Exception ex)
             {

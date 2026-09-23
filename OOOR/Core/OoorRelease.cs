@@ -42,6 +42,9 @@ namespace ooor.Core
         /// <summary>官网域名（关于窗口跳转用；固定值，不受 server_url 配置影响）</summary>
         public const string HomeUrl = "https://ooor.cc";
 
+        /// <summary>GitHub 仓库地址（关于窗口跳转用；MIT 开源项目）</summary>
+        public const string GitHubUrl = "https://github.com/rhettli/Ooor-desktop";
+
         private static readonly HttpClient _http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
         private static readonly JavaScriptSerializer _ser = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
 
