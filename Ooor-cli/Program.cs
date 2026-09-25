@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Windows.Forms;
 using OoorFunc.Core;
 
 namespace Ooor_cli
@@ -46,6 +48,7 @@ namespace Ooor_cli
         /// <summary>是否为 --trust 开放权限模式（/new-console 新窗口保持一致）</summary>
         private static bool _trust;
 
+        [STAThread]   // --web 模式下承载 WebView2 WinForms 窗口要求 STA；对原生控制台 REPL 无影响
         private static int Main(string[] argv)
         {
             CliUi.Init();
@@ -56,6 +59,8 @@ namespace Ooor_cli
             string argBase = null;
             bool trust = false;
             bool pause = false;   // --pause：启动失败时停窗显示原因（OOOR 主界面菜单拉起时使用）
+            bool webMode = false; // --web：打开 WebView2 高仿控制台窗口（黑底网页终端），不进原生控制台 REPL
+            bool devTools = false; // --devtools：--web 时启用并自动打开 WebView2 开发者工具（F12 / 右键菜单）
             string argSession = null;  // --session <id>：从 LiteDB 恢复指定会话接着聊
             string argModel = null;    // --model <path>：期望模型（记录用；实际以服务已加载模型为准）
             string argAgent = null;    // --agent <name>：以指定 Agent 的系统提示词开始一个空白新对话
@@ -66,6 +71,8 @@ namespace Ooor_cli
                 if (a == "--help" || a == "-h" || a == "/?") { PrintUsage(); return 0; }
                 if (a == "--trust" || a == "-y") { trust = true; continue; }
                 if (a == "--pause") { pause = true; continue; }
+                if (a == "--web" || a == "--gui") { webMode = true; continue; }
+                if (a == "--devtools") { devTools = true; continue; }
                 if (a == "--base" && i + 1 < argv.Length) { argBase = argv[++i]; continue; }
                 if (a == "--root" && i + 1 < argv.Length) { extraRoots.Add(argv[++i]); continue; }
                 if (a == "--session" && i + 1 < argv.Length) { argSession = argv[++i]; continue; }
@@ -84,6 +91,9 @@ namespace Ooor_cli
                 : "ooor 的命令行 AI 助手：连接本地 llama-server 的终端 Agent（Ooor-cli.exe）。";
             try { CoreEnv.AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(3); }
             catch { CoreEnv.AppVersion = ""; }
+
+            // ===================== 网页控制台模式（--web）：WebView2 高仿 cmd 窗口，不进原生 REPL =====================
+            if (webMode) return RunWeb(argBase, extraRoots, trust, pause, devTools);
 
             // ===================== 连接 llama-server =====================
             string baseUrl = ResolveBaseUrl(argBase);
@@ -798,6 +808,46 @@ namespace Ooor_cli
             return true;
         }
 
+        // ===================== 网页控制台（--web） =====================
+
+        [DllImport("kernel32.dll")] private static extern IntPtr GetConsoleWindow();
+        [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        /// <summary>
+        /// --web：打开 WebView2 高仿控制台窗口（WebConsoleForm），不进入原生控制台 REPL。
+        /// 主程序菜单以 CreateNoWindow 拉起时本进程没有控制台；若从 PowerShell/资源管理器直接启动而带上了
+        /// 控制台窗口，这里一并隐藏，桌面上只留网页终端窗口。
+        /// 权限语义与原生控制台不同：读 agent.conf（AgentOptions.Default），不强制工具全开。
+        /// </summary>
+        private static int RunWeb(string argBase, List<string> extraRoots, bool trust, bool pause, bool devTools)
+        {
+            string baseUrl = ResolveBaseUrl(argBase);
+
+            // 先探活：--pause（主程序菜单拉起）下连不上服务直接弹框说明；否则照常开窗由页面内提示
+            string modelId = ProbeModel(baseUrl, out string probeErr);
+            if (modelId == null && pause)
+            {
+                MessageBox.Show(
+                    "无法连接本地模型服务：\r\n" + baseUrl + "\r\n" + probeErr +
+                    "\r\n\r\n请先在 ooor 主程序中启动服务后再打开。",
+                    "ooor AI 助手（控制台窗口）", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return 1;
+            }
+
+            try
+            {
+                IntPtr hCon = GetConsoleWindow();
+                if (hCon != IntPtr.Zero) ShowWindow(hCon, 0);   // SW_HIDE
+            }
+            catch { }
+
+            //Application.EnableVisualStyles();
+            //Application.SetCompatibleTextRenderingDefault(false);
+            using (var form = new WebConsoleForm(baseUrl, extraRoots, trust, modelId ?? "", devTools))
+                Application.Run(form);
+            return 0;
+        }
+
         // ===================== 启动辅助 =====================
 
         private static void PrintUsage()
@@ -807,6 +857,7 @@ namespace Ooor_cli
             Console.WriteLine(CliLang.T("usageBase"));
             Console.WriteLine(CliLang.T("usageRoot"));
             Console.WriteLine(CliLang.T("usageTrust"));
+            Console.WriteLine(CliLang.T("usageWeb"));
             Console.WriteLine(CliLang.T("usageSession"));
             Console.WriteLine(CliLang.T("usageAgent"));
             Console.WriteLine(CliLang.T("usageModel"));

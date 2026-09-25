@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>ooor AI 助手</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="term" @click="focusInput">
+  <div id="output" ref="output">
+    <div v-for="ln in viewLines" :class="['ln', ln.cls]" v-html="ln.html"></div>
+  </div>
+
+  <!-- 斜杠命令菜单：纯键盘 ↑↓ 选择、Tab 补全、Enter 执行、Esc 关闭 -->
+  <div id="slashmenu" v-show="menuItems.length">
+    <div v-for="(mi, i) in menuItems" :class="['mi', { sel: i === menuSel }]"
+         @mousedown.prevent="pickMenu(i)">
+      <span class="cmd">{{ mi.cmd }}</span><span class="hint">{{ mi.hint }}</span>
+    </div>
+  </div>
+
+  <div id="inputrow">
+    <span class="prompt">Ooor&gt;</span>
+    <span id="inputtext" v-html="inputView"></span>
+  </div>
+
+  <!-- 透明 textarea：只负责捕获真实按键与中文输入法，画面由上面的 inputtext 呈现 -->
+  <textarea id="keys" ref="keys" autocomplete="off" autocorrect="off" autocapitalize="off"
+            spellcheck="false" wrap="soft"
+            @input="onInput" @keydown="onKeydown" @compositionstart="composing=true"
+            @compositionend="composing=false"></textarea>
+</div>
+<script src="vue.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -58,15 +58,6 @@
     <Reference Include="LiteDB, Version=5.0.21.0, Culture=neutral, PublicKeyToken=4ee40123013c9f27, processorArchitecture=MSIL">
       <HintPath>..\packages\LiteDB.5.0.21\lib\net45\LiteDB.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Web.WebView2.Core, Version=1.0.4191.47, Culture=neutral, PublicKeyToken=2a8ab48044d2601e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Web.WebView2.1.0.4191.47\lib\net462\Microsoft.Web.WebView2.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Web.WebView2.WinForms, Version=1.0.4191.47, Culture=neutral, PublicKeyToken=2a8ab48044d2601e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Web.WebView2.1.0.4191.47\lib\net462\Microsoft.Web.WebView2.WinForms.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Web.WebView2.Wpf, Version=1.0.4191.47, Culture=neutral, PublicKeyToken=2a8ab48044d2601e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Web.WebView2.1.0.4191.47\lib\net462\Microsoft.Web.WebView2.Wpf.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
@@ -243,9 +234,6 @@
     <Compile Include="ProfileManagerForm.Designer.cs">
       <DependentUpon>ProfileManagerForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="AgentChatWebForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="InputBox.cs" />
     <Compile Include="DeleteConfirmForm.cs" />
     <Compile Include="LlamaInstallConfirmForm.cs" />
@@ -266,9 +254,6 @@
   <ItemGroup>
     <EmbeddedResource Include="AboutForm.resx">
       <DependentUpon>AboutForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="AgentChatWebForm.resx">
-      <DependentUpon>AgentChatWebForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="AgentEditForm.resx">
       <DependentUpon>AgentEditForm.cs</DependentUpon>
@@ -329,20 +314,27 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
-  <!-- AI 助手界面资源：随编译输出，NSIS 整目录打包进安装包 -->
+  <!-- AI 助手网页终端界面：源文件在 Ooor-cli 项目，以链接方式随本程序输出到 html\（运行时 Ooor-cli.exe 在本目录找 html） -->
   <ItemGroup>
-    <Content Include="html\index.html">
+    <Content Include="..\Ooor-cli\html\index.html">
+      <Link>html\index.html</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="html\style.css">
+    <Content Include="..\Ooor-cli\html\style.css">
+      <Link>html\style.css</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="html\app.js">
+    <Content Include="..\Ooor-cli\html\app.js">
+      <Link>html\app.js</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="html\vue.js">
+    <Content Include="..\Ooor-cli\html\vue.js">
+      <Link>html\vue.js</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <!-- 随编译输出的内容资源 -->
+  <ItemGroup>
     <Content Include="Lang\zh.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -376,12 +368,4 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- WebView2：拷贝 WebView2Loader.dll 等原生依赖 -->
-  <Import Project="..\packages\Microsoft.Web.WebView2.1.0.4191.47\build\Microsoft.Web.WebView2.targets" Condition="Exists('..\packages\Microsoft.Web.WebView2.1.0.4191.47\build\Microsoft.Web.WebView2.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。使用“NuGet 程序包还原”可下载这些程序包。缺少的文件是 {0}。</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Microsoft.Web.WebView2.1.0.4191.47\build\Microsoft.Web.WebView2.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Web.WebView2.1.0.4191.47\build\Microsoft.Web.WebView2.targets'))" />
-  </Target>
 </Project>

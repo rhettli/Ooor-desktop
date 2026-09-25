@@ -3,50 +3,28 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Threading;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
-using ooor.Core;
 using OoorFunc.Core;
 
-namespace ooor
+namespace Ooor_cli
 {
     /// <summary>
-    /// 「AI 助手」窗口（WebView2 宿主）：
+    /// 「ooor AI 助手」网页控制台窗口（--web 模式）：WebView2 宿主，页面是一个高仿 cmd 的黑底终端。
     ///
-    ///   - UI 全部由 html 目录下的页面渲染（index.html / style.css / app.js），本窗口只做宿主与桥接；
-    ///   - 模型侧由页面直接 fetch llama-server 的 /v1/chat/completions（SSE 流式），
-    ///     好处：DevTools 网络面板能看到每个请求/响应，排查问题不必依赖 C# 日志；
-    ///   - 本窗口只提供：配置（系统提示 / 工具 schema）、工具执行（沙盒 + 审批）、状态；
-    ///   - C#→JS：CoreWebView2.PostWebMessageAsJson（页面监听 window.chrome.webview message）；
-    ///   - JS→C#：页面 postMessage → WebMessageReceived，按 action 分发；
-    ///   - 高危工具（写/删/命令/脚本）的审批用原生 MessageBox（真安全边界不用页面弹窗，避免页面被注入后自批）。
+    /// 本类只做宿主与桥接（由 OOOR 项目的 AgentChatWebForm 迁移而来）：
+    ///   - 模型侧由页面直连 llama-server 的 /v1/chat/completions（SSE 流式）；
+    ///   - 本窗口只提供：配置（系统提示 / 工具 schema）、工具执行（沙盒 + 原生 MessageBox 审批）、状态；
+    ///   - 权限语义与原生控制台 REPL 不同：读 agent.conf（AgentOptions.Default），不强制工具全开；
+    ///   - C#→JS：PostWebMessageAsJson；JS→C#：WebMessageReceived 按 action 分发；
+    ///   - 高危审批坚持用原生 MessageBox：真安全边界，页面被注入也无法自行批准。
     /// </summary>
-    internal sealed class AgentChatWebForm : Form
+    internal sealed class WebConsoleForm : Form
     {
-        private static AgentChatWebForm _instance;
-
-        /// <summary>单例打开：已存在则激活（与主窗口共用同一个 Agent 会话）</summary>
-        public static void ShowSingle()
-        {
-            if (_instance == null || _instance.IsDisposed)
-            {
-                _instance = new AgentChatWebForm();
-                _instance.Show();
-            }
-            else
-            {
-                _instance.Show();
-                if (_instance.WindowState == FormWindowState.Minimized)
-                    _instance.WindowState = FormWindowState.Normal;
-                _instance.Activate();
-                _instance.BringToFront();
-            }
-        }
-
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer
         {
             MaxJsonLength = int.MaxValue,
@@ -54,54 +32,70 @@ namespace ooor
         };
 
         private readonly WebView2 _web;
-        private AgentOptions _opt;           // 窗体持有的当前 Agent 参数（改开关即时落盘）
+        private readonly string _baseUrl;
+        private readonly string _modelId;
+        private readonly bool _trustArg;
+        private readonly bool _devTools;   // --devtools：启用 F12/右键开发者工具并在启动时自动打开
+        private AgentOptions _opt;           // 当前 Agent 参数（/option、/root 即时落盘 agent.conf）
         private AgentToolRegistry _registry; // 工具集：页面发 {a:'tool'}，这里执行（沙盒 + 审批仍在 C#）
-        private bool _webReady;              // CoreWebView2 初始化完成
+        private bool _webReady;
+        private bool _running;
 
-        private AgentChatWebForm()
+        public WebConsoleForm(string baseUrl, List<string> extraRoots, bool trust, string modelId, bool devTools)
         {
-            Text = "ooor AI 助手";
+            _baseUrl = baseUrl ?? "";
+            _modelId = modelId ?? "";
+            _running = !string.IsNullOrEmpty(_baseUrl);
+            _trustArg = trust;
+            _devTools = devTools;
+
+            Text = "ooor AI 助手（控制台窗口）";
             StartPosition = FormStartPosition.CenterScreen;
             Size = new Size(1020, 720);
-            MinimumSize = new Size(760, 520);
-            BackColor = Color.FromArgb(17, 19, 24);
-            Font = new Font("Microsoft YaHei UI", 9F);
+            MinimumSize = new Size(980, 720);
+            BackColor = Color.Black;
 
-            _web = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.FromArgb(17, 19, 24) };
+            _web = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.Black };
             Controls.Add(_web);
 
-            FormClosed += (s, e) => { _instance = null; };
-        }
+            // 窗口语义：读 agent.conf（默认只读 + 用户保存过的开关/白名单），不强制工具全开
+            _opt = AgentOptions.Default();
+            if (_trustArg) _opt.TrustAiJudgment = true;
+            try
+            {
+                string cwd = Environment.CurrentDirectory;
+                if (!string.IsNullOrEmpty(cwd)) AddRootInternal(cwd);
+            }
+            catch { }
+            if (extraRoots != null)
+                foreach (string r in extraRoots) AddRootInternal(r);
 
-        protected override async void OnShown(EventArgs e)
-        {
-            base.OnShown(e);
-            await InitWebViewAsync();
+            Shown += async (s, e) => await InitWebViewAsync();
         }
 
         // ==================== WebView2 初始化 ====================
 
         private async Task InitWebViewAsync()
         {
-            string htmlDir = LlamaRuntime.HtmlDir;
+            string htmlDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "html");
             string index = Path.Combine(htmlDir, "index.html");
             if (!File.Exists(index))
             {
                 MessageBox.Show(this,
-                    "找不到界面资源文件：\r\n" + index + "\r\n\r\n" +
-                    "请确认 html 目录随程序一起发布（源码目录：OOOR\\html）。",
-                    "AI 助手", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    "找不到终端界面资源文件：\r\n" + index + "\r\n\r\n请确认 html 目录随 Ooor-cli.exe 一起发布。",
+                    Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
             try
             {
-                string udf = Path.Combine(Path.GetTempPath(), "ooor-webview2");
+                string udf = Path.Combine(Path.GetTempPath(), "ooor-cli-webview2");
                 CoreWebView2Environment env = await CoreWebView2Environment.CreateAsync(null, udf);
                 await _web.EnsureCoreWebView2Async(env);
 
                 CoreWebView2 core = _web.CoreWebView2;
-                if (!Debugger.IsAttached)
+                // 开发者工具：--devtools 显式开启，或在 Visual Studio 里挂着托管调试器运行时自动开启
+                if (!_devTools && !Debugger.IsAttached)
                 {
                     core.Settings.AreDefaultContextMenusEnabled = false;
                     core.Settings.IsStatusBarEnabled = false;
@@ -109,14 +103,21 @@ namespace ooor
                 }
                 core.Settings.IsWebMessageEnabled = true;
 
-                // 把 html 目录映射成虚拟域名，页面可直接 fetch 同目录资源
+                // 把 html 目录映射成虚拟域名；http:// 页面 fetch 本机 http 服务无混合内容问题（服务端 CORS 全放行）
                 core.SetVirtualHostNameToFolderMapping(
                     "ooor.local", htmlDir, CoreWebView2HostResourceAccessKind.Allow);
 
                 core.WebMessageReceived += OnWebMessageReceived;
-                // 用 http:// 虚拟域名：页面 fetch llama-server(http://127.0.0.1:port) 属跨域但服务端 CORS 全放行，
-                // 且 http 页面不存在 https→http 的混合内容隐患
                 core.Navigate("http://ooor.local/index.html");
+
+                if (_devTools)
+                {
+                    // 导航完成后自动弹出 DevTools 窗口；之后也可随时 F12 或右键「检查」
+                    core.NavigationCompleted += (s2, e2) =>
+                    {
+                        try { core.OpenDevToolsWindow(); } catch { }
+                    };
+                }
 
                 _webReady = true;
             }
@@ -125,7 +126,7 @@ namespace ooor
                 MessageBox.Show(this,
                     "WebView2 初始化失败：\r\n" + ex.Message + "\r\n\r\n" +
                     "请确认已安装 WebView2 Runtime（Win10/11 通常自带）。",
-                    "AI 助手", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -138,22 +139,17 @@ namespace ooor
             catch { return; }
             if (msg == null) return;
 
-            string action = Str(msg, "a");
-            switch (action)
+            switch (Str(msg, "a"))
             {
                 case "ready":
-                    try { EnsureRegistry(); } catch { /* 服务未启动时留空，等对话前再建 */ }
+                    try { EnsureRegistry(); } catch { /* 首次对话前还能重建 */ }
                     PostState();
                     break;
                 case "cfg":
-                    // 页面要开始对话了：下发系统提示 + 工具 schema（模型调用由页面直连 /v1 完成）
                     PostCfg();
                     break;
                 case "tool":
                     RunTool(Str(msg, "id"), Str(msg, "name"), Str(msg, "args"));
-                    break;
-                case "clear":
-                    ClearChat();
                     break;
                 case "options":
                     ApplyOptions(Bool(msg, "allowWrite", false), Bool(msg, "allowCmd", false),
@@ -162,8 +158,8 @@ namespace ooor
                 case "addRoot":
                     AddRootByDialog();
                     break;
-                case "addAppDir":
-                    AddRoot(SafeStartupPath());
+                case "rootAdd":
+                    AddRoot(Str(msg, "path"));
                     break;
                 case "removeRoot":
                     RemoveRoot(Str(msg, "path"));
@@ -171,23 +167,23 @@ namespace ooor
                 case "openPath":
                     OpenPath(Str(msg, "path"));
                     break;
+                case "fileRead":
+                    FileRead(Str(msg, "id"), Str(msg, "path"));
+                    break;
                 case "checkServer":
-                    PostState();
+                    CheckServer();
+                    break;
+                case "newWindow":
+                    NewWindow();
+                    break;
+                case "exit":
+                    try { BeginInvoke(new Action(Close)); } catch { }
                     break;
             }
         }
 
-        // ==================== 工具执行（模型调用在页面侧） ====================
+        // ==================== 工具执行 ====================
 
-        /// <summary>当前 llama-server 基地址；未启动/无状态时返回空串</summary>
-        private static string CurrentBaseUrl()
-        {
-            ServerManager.RunState st = ServerManager.LastRunState ?? ServerManager.LoadRunState();
-            if (st == null || string.IsNullOrEmpty(st.Host) || st.Port <= 0) return "";
-            return "http://" + st.Host + ":" + st.Port;
-        }
-
-        /// <summary>惰性构建工具集（工具集随 AllowWrite / AllowCommand 变化而重建）</summary>
         private AgentToolRegistry EnsureRegistry()
         {
             if (_registry == null) _registry = new AgentToolRegistry(Opt, UiConfirm);
@@ -199,7 +195,7 @@ namespace ooor
             get { return _opt ?? (_opt = AgentOptions.Default()); }
         }
 
-        /// <summary>下发 Agent 配置：服务地址 + 系统提示 + 工具 schema（页面据此直连 /v1 对话）</summary>
+        /// <summary>下发 Agent 配置：服务地址 + 系统提示 + 工具 schema（页面据此直连 /v1 对话）。</summary>
         private void PostCfg()
         {
             AgentToolRegistry reg;
@@ -210,8 +206,9 @@ namespace ooor
             Post(new Dictionary<string, object>
             {
                 { "t", "cfg" },
-                { "baseUrl", CurrentBaseUrl() },
-                { "running", SafeServerRunning() },
+                { "baseUrl", _baseUrl },
+                { "running", _running },
+                { "modelId", _modelId },
                 { "system", o.SystemPrompt ?? "" },
                 { "maxSteps", o.MaxSteps },
                 { "temperature", 0.2 },
@@ -220,10 +217,7 @@ namespace ooor
             });
         }
 
-        /// <summary>
-        /// 页面发来的工具调用：在后台线程执行（可能弹审批框 / 跑脚本，不能卡 UI），
-        /// 执行完把结果回给页面（页面塞回 messages 的 role=tool 里继续下一轮）。
-        /// </summary>
+        /// <summary>页面发来的工具调用：后台线程执行（可能弹审批框 / 跑脚本），完成后把结果回给页面。</summary>
         private void RunTool(string id, string name, string argsJson)
         {
             AgentToolRegistry reg;
@@ -320,33 +314,55 @@ namespace ooor
             }
         }
 
+        /// <summary>/root add &lt;路径&gt;：终端直接给路径（无路径时页面改发 addRoot 走目录框）。</summary>
         private void AddRoot(string path)
         {
-            if (string.IsNullOrWhiteSpace(path)) return;
+            if (string.IsNullOrWhiteSpace(path)) { AddRootByDialog(); return; }
             string p;
             try { p = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar); }
-            catch { return; }
+            catch { PostSystem("路径无效：" + path, true); return; }
+
+            if (AddRootInternal(p))
+            {
+                AgentSettings.Save(Opt);
+                PostSystem("已加入白名单：" + p, false);
+            }
+            PostState();
+        }
+
+        private bool AddRootInternal(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return false;
+            string p;
+            try { p = Path.GetFullPath(path.Trim()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar); }
+            catch { return false; }
+            if (p.Length == 0 || !Directory.Exists(p)) return false;
 
             AgentOptions o = Opt;
             foreach (string r in o.AllowedRoots)
-            {
-                if (string.Equals(r, p, StringComparison.OrdinalIgnoreCase)) { PostState(); return; }
-            }
-            o.AllowedRoots.Add(p);          // 工具集持有同一 Options 引用 → 立即生效，无需重建
-            AgentSettings.Save(o);
-            PostState();
+                if (string.Equals(r, p, StringComparison.OrdinalIgnoreCase)) return false;
+            o.AllowedRoots.Insert(0, p);   // 与 Options 同一引用 → 工具集立即生效
+            return true;
         }
 
         private void RemoveRoot(string path)
         {
             if (string.IsNullOrWhiteSpace(path)) return;
             AgentOptions o = Opt;
+            bool removed = false;
             for (int i = o.AllowedRoots.Count - 1; i >= 0; i--)
             {
                 if (string.Equals(o.AllowedRoots[i], path, StringComparison.OrdinalIgnoreCase))
+                {
                     o.AllowedRoots.RemoveAt(i);
+                    removed = true;
+                }
             }
-            AgentSettings.Save(o);
+            if (removed)
+            {
+                AgentSettings.Save(o);
+                PostSystem("已移出白名单：" + path, false);
+            }
             PostState();
         }
 
@@ -356,18 +372,82 @@ namespace ooor
             {
                 if (string.IsNullOrWhiteSpace(path)) return;
                 if (!Directory.Exists(path) && !File.Exists(path)) { PostSystem("路径不存在：" + path, true); return; }
-                Process.Start("explorer.exe", "\"" + path + "\"");
+                // UseShellExecute=true → ShellExecute：文件按系统默认程序打开（.html 走默认浏览器），目录走资源管理器
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true
+                });
             }
             catch (Exception ex) { PostSystem("打开失败：" + ex.Message, true); }
         }
 
-        private void ClearChat()
+        /// <summary>/file &lt;路径&gt;：读文件内容回给终端显示（截断 6000 字符，与原生 CLI 一致）。</summary>
+        private void FileRead(string id, string path)
         {
-            // 对话历史由页面持有，C# 只需通知「重置」
-            Post(new Dictionary<string, object> { { "t", "clear" } });
+            string text;
+            bool ok = false;
+            try
+            {
+                string p = (path ?? "").Trim('"').Trim();
+                if (!File.Exists(p)) { text = "文件不存在：" + p; }
+                else
+                {
+                    text = File.ReadAllText(p);
+                    ok = true;
+                }
+            }
+            catch (Exception ex) { text = "读取失败：" + ex.Message; }
+
+            Post(new Dictionary<string, object>
+            {
+                { "t", "fileResult" },
+                { "id", id ?? "" },
+                { "ok", ok },
+                { "path", path ?? "" },
+                { "text", text ?? "" }
+            });
         }
 
-        /// <summary>高危工具审批：原生 MessageBox（默认按钮=否），必须回到 UI 线程</summary>
+        /// <summary>页面「检测服务」：重新探活 /v1/models，刷新状态横幅。</summary>
+        private void CheckServer()
+        {
+            Task.Run(() =>
+            {
+                bool ok = false;
+                try
+                {
+                    using (var http = new HttpClient { Timeout = TimeSpan.FromSeconds(4) })
+                    using (HttpResponseMessage resp = http.GetAsync(_baseUrl + "/v1/models").GetAwaiter().GetResult())
+                        ok = resp.IsSuccessStatusCode;
+                }
+                catch { ok = false; }
+                _running = ok;
+                PostState();
+            });
+        }
+
+        /// <summary>/new-console：再开一个同样的网页控制台窗口（独立进程）。</summary>
+        private void NewWindow()
+        {
+            try
+            {
+                string exe = Process.GetCurrentProcess().MainModule.FileName;
+                var psi = new ProcessStartInfo
+                {
+                    FileName = exe,
+                    Arguments = "--web" + (Opt.TrustAiJudgment ? " --trust" : ""),
+                    WorkingDirectory = Environment.CurrentDirectory,
+                    UseShellExecute = false,
+                    CreateNoWindow = true      // 窗口模式不要控制台
+                };
+                Process.Start(psi);
+                PostSystem("已新开一个控制台窗口。", false);
+            }
+            catch (Exception ex) { PostSystem("新窗口打开失败：" + ex.Message, true); }
+        }
+
+        /// <summary>高危工具审批：原生 MessageBox（默认按钮=否），必须在 UI 线程。</summary>
         private bool UiConfirm(string title, string detail)
         {
             if (IsDisposed || !IsHandleCreated) return false;
@@ -389,30 +469,28 @@ namespace ooor
         private void PostState()
         {
             AgentOptions o = Opt;
-            var roots = new List<string>(o.AllowedRoots);
             string tools = "";
             if (_registry != null)
             {
                 try { tools = string.Join(", ", _registry.Names); } catch { }
             }
 
-            string baseUrl = CurrentBaseUrl();
-
             Post(new Dictionary<string, object>
             {
                 { "t", "state" },
-                { "running", SafeServerRunning() },
-                { "baseUrl", baseUrl },
-                { "roots", roots },
+                { "running", _running },
+                { "baseUrl", _baseUrl },
+                { "modelId", _modelId },
+                { "roots", new List<string>(o.AllowedRoots) },
                 { "allowWrite", o.AllowWrite },
                 { "allowCmd", o.AllowCommand },
                 { "trustAi", o.TrustAiJudgment },
                 { "allowInternet", o.AllowInternet },
                 { "maxSteps", o.MaxSteps },
                 { "tools", tools },
-                { "appDir", SafeStartupPath() },
-                { "htmlDir", SafeHtmlDir() },
-                { "version", DEF.ver }
+                { "tempDir", o.TempDir },
+                { "appDir", AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/') },
+                { "version", CoreEnv.AppVersion ?? "" }
             });
         }
 
@@ -463,34 +541,6 @@ namespace ooor
             if (s == "true" || s == "1") return true;
             if (s == "false" || s == "0") return false;
             return dflt;
-        }
-
-        private static string SafeStartupPath()
-        {
-            try { return Application.StartupPath; } catch { return ""; }
-        }
-
-        private static string SafeHtmlDir()
-        {
-            try { return LlamaRuntime.HtmlDir; } catch { return ""; }
-        }
-
-        private static bool SafeServerRunning()
-        {
-            try { return ServerManager.Server.IsRunning; } catch { return false; }
-        }
-
-        private void InitializeComponent()
-        {
-            this.SuspendLayout();
-            // 
-            // AgentChatForm
-            // 
-            this.ClientSize = new System.Drawing.Size(278, 244);
-            this.Name = "AgentChatForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.ResumeLayout(false);
-
         }
     }
 }

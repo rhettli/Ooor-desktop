@@ -1242,12 +1242,45 @@ namespace ooor
         // ==================== cmd 窗口运行（llama-cli 交互对话） ====================
 
         /// <summary>
-        /// 「AI 助手（可操作沙盒内文件）」：打开 agent 聊天窗口（走 llama-server 的工具调用循环）。
-        /// 与 cmd 窗口（llama-cli）不同：本窗口内的模型可以调用 list_directory / read_file 等工具。
+        /// 「打开窗口 AI 助手」：拉起 Ooor-cli.exe 的网页控制台窗口（--web，WebView2 高仿 cmd 黑底终端）。
+        /// 窗口宿主已迁移到 Ooor-cli 项目，主程序只负责进程外启动；
+        /// CreateNoWindow：窗口模式不需要控制台，--pause 让服务未就绪时弹框说明而非闪退。
         /// </summary>
         private void ToolStripMenuItemRunAgent_Click(object sender, EventArgs e)
         {
-            AgentChatWebForm.ShowSingle();
+            string exe = Path.Combine(Application.StartupPath, "Ooor-cli.exe");
+            if (!File.Exists(exe))
+            {
+                MessageBox.Show(this, "找不到 Ooor-cli.exe（应与本程序同目录）：\r\n" + exe,
+                    "打开窗口AI助手", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!_server.IsRunning &&
+                MessageBox.Show(this,
+                    "本地服务未运行，窗口 AI 助手可能连不上模型。\r\n是否仍要打开？",
+                    "打开窗口AI助手", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = exe,
+                    Arguments = "--web --pause --devtools",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,                    // 网页终端窗口自身就是界面，不弹控制台/PowerShell
+                    WorkingDirectory = LlamaRuntime.ConfigRoot // CLI 会把工作目录加入沙盒白名单
+                };
+                Process.Start(psi);
+                LogT("log.info.cliOpened");
+                SetStatus("已打开窗口 AI 助手", false);
+            }
+            catch (Exception ex)
+            {
+                LogT("log.err.cliStart", ex.Message);
+                MessageBox.Show(this, ex.Message, "打开窗口AI助手", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         /// <summary>
@@ -1276,9 +1309,13 @@ namespace ooor
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = exe,
-                    Arguments = "--pause",
-                    UseShellExecute = true,                      // 控制台程序：Shell 启动会新开一个控制台窗口
+                    // 不直接运行 exe，而是放进 PowerShell 宿主中执行（exe 作为 powershell 的子进程）
+                    FileName = "powershell.exe",
+                    // & 调用运算符启动 CLI（单引号包裹路径，兼容空格）；
+                    // -NoExit 让 CLI 退出后 PowerShell 窗口仍保留，配合 --pause 停住显示错误原因；
+                    // -NoProfile 避免用户配置文件的输出干扰
+                    Arguments = "-NoExit -NoProfile -Command \"& '" + exe + "' --pause\"",
+                    UseShellExecute = true,                      // Shell 启动会新开一个 PowerShell 控制台窗口
                     WorkingDirectory = LlamaRuntime.ConfigRoot   // CLI 会把工作目录加入沙盒白名单
                 };
                 Process.Start(psi);
@@ -1375,7 +1412,7 @@ namespace ooor
                     // --root 显式把 cwd 也加一份，避免 ShellExecute 下 Environment.CurrentDirectory 与 WorkingDirectory 不一致的边界情况；
                     // --pause 同默认入口：服务未就绪时停窗显示原因，不闪退。
                     Arguments = "--pause --trust --root \"" + cwd + "\"",
-                    UseShellExecute = true,                    // 控制台程序：Shell 启动会新开一个控制台窗口
+                    UseShellExecute = false,                    // 控制台程序：Shell 启动会新开一个控制台窗口
                     WorkingDirectory = cwd                     // 工作目录 = ConfigRoot，CLI 会自动把它加进沙盒
                 };
                 Process.Start(psi);

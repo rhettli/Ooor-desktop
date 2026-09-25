@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -396,6 +397,14 @@ namespace Ooor_cli
                 AppendInline(sb, m.Groups[2].Value, b);
                 return sb.ToString();
             }
+            // "* 文本 *" 与无序列表 "* 文本" 同形：整行被同一对 *...*（或 **...**）包住、
+            // 且闭合标记在行尾时，优先按斜体/加粗处理，否则外层 * 会被当成列表符、结尾 * 漏配对
+            int emRun, emClose;
+            if (IsWholeLineEmphasis(raw, out emRun, out emClose))
+            {
+                AppendInline(sb, raw, baseAnsi);
+                return sb.ToString();
+            }
             m = RxBullet.Match(raw);
             if (m.Success)
             {
@@ -415,7 +424,7 @@ namespace Ooor_cli
             return sb.ToString();
         }
 
-        /// <summary>行内样式：`代码`、``引文``、**加粗**、*斜体*（baseAnsi 为行基础色，段落后恢复）。</summary>
+        /// <summary>行内样式：`代码`、``引文``、**加粗**、*斜体*（支持斜体/加粗互相嵌套；baseAnsi 为行基础色，段落后恢复）。</summary>
         private void AppendInline(StringBuilder sb, string s, string baseAnsi)
         {
             sb.Append(baseAnsi);
@@ -431,18 +440,24 @@ namespace Ooor_cli
                     while (i + run < s.Length && s[i + run] == c) run++;
                     if (run >= 3) { sb.Append(s, i, run); i += run; continue; }   // ``` 等不当行内样式
 
-                    int close = IndexOfRun(s, i + run, c, run);
+                    int close = c == '*' ? FindClose(s, i + run, run)            // * 需跳过内层配对
+                                         : IndexOfRun(s, i + run, c, run);        // ` 无嵌套定界符
                     if (close < 0) { sb.Append(c); i++; continue; }               // 行内未闭合：原样
 
                     string content = s.Substring(i + run, close - i - run);
-                    string style;
                     if (c == '`')
-                        style = run == 2 ? CliUi.Bold + CliUi.BgCode
-                                        : (_reasoning ? CliUi.Bold + CliUi.BgCode : CliUi.Cyan);
+                    {
+                        string codeStyle = run == 2 ? CliUi.Bold + CliUi.BgCode
+                                                    : (_reasoning ? CliUi.Bold + CliUi.BgCode : CliUi.Cyan);
+                        sb.Append(codeStyle).Append(CliUi.Sanitize(content)).Append(CliUi.Reset).Append(baseAnsi);
+                    }
                     else
-                        style = run == 2 ? CliUi.Bold : CliUi.Italic;
-
-                    sb.Append(style).Append(CliUi.Sanitize(content)).Append(CliUi.Reset).Append(baseAnsi);
+                    {
+                        string style = run == 2 ? CliUi.Bold : CliUi.Italic;
+                        sb.Append(style);
+                        AppendInline(sb, content, style);                        // 递归：斜体里可套加粗，反之亦然
+                        sb.Append(CliUi.Reset).Append(baseAnsi);
+                    }
                     i = close + run;
                     continue;
                 }
@@ -485,6 +500,69 @@ namespace Ooor_cli
                 if (ok) return i;
             }
             return -1;
+        }
+
+        /// <summary>
+        /// 在 s[from..] 中找长度 run（1=* 斜体 / 2=** 加粗）的闭合标记：
+        /// 用“定界符长度栈”跳过内层已配对的标记（斜体套加粗、加粗套斜体），
+        /// 并跳过 `代码` / ``引文`` 区间内的 *；栈空后遇到同长度标记才算外层闭合，找不到返回 -1。
+        /// </summary>
+        private static int FindClose(string s, int from, int run)
+        {
+            var stack = new Stack<int>();
+            for (int i = from; i < s.Length; )
+            {
+                char ch = s[i];
+
+                // 代码/引文区间内的 * 是字面量，整体跳过
+                if (ch == '`')
+                {
+                    int r = 0;
+                    while (i + r < s.Length && s[i + r] == '`') r++;
+                    if (r >= 3) { i += r; continue; }
+                    int codeClose = IndexOfRun(s, i + r, '`', r);
+                    i = codeClose < 0 ? i + r : codeClose + r;
+                    continue;
+                }
+
+                if (ch != '*') { i++; continue; }
+
+                int n = 0;
+                while (i + n < s.Length && s[i + n] == '*') n++;
+                if (n >= 3) { i += n; continue; }                              // *** 按字面量处理
+
+                if (stack.Count == 0 && n == run) return i;                    // 内层全部配对：外层闭合
+                if (stack.Count > 0 && stack.Peek() == n) stack.Pop();         // 与最近的同长度开标记配对
+                else stack.Push(n);
+                i += n;
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// 判断整行是否被同一对 *...*（斜体）或 **...**（加粗）包住：行首是定界符、
+        /// 配对的闭合标记在行尾（可跟空白）。用于区分 "* 文本 *"（斜体）与 "* 文本"（无序列表）。
+        /// </summary>
+        private static bool IsWholeLineEmphasis(string raw, out int openRun, out int closePos)
+        {
+            openRun = 0;
+            closePos = -1;
+            if (string.IsNullOrEmpty(raw) || raw[0] != '*') return false;
+
+            int n = 0;
+            while (n < raw.Length && raw[n] == '*') n++;
+            if (n >= 3) return false;
+
+            int close = FindClose(raw, n, n);
+            if (close < 0) return false;
+
+            int tail = close + n;
+            while (tail < raw.Length && (raw[tail] == ' ' || raw[tail] == '\t')) tail++;
+            if (tail != raw.Length) return false;                              // 闭合标记后还有正文 → 不是整行样式
+
+            openRun = n;
+            closePos = close;
+            return true;
         }
 
         /// <summary>码点显示宽度：0=组合字符/控制符，2=中文/全角/Emoji，其余 1。</summary>
