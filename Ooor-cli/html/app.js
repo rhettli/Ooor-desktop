@@ -179,18 +179,38 @@
     computed: {
       viewLines: function () { return this.lines.concat(this.live); },
 
-      /** 斜杠菜单候选：按第一个 token 前缀过滤 */
+      /** 斜杠菜单候选：按第一个 token 前缀过滤（全量，显示层再分页） */
       menuItems: function () {
         var tok = (this.input || '').trim().split(/\s+/)[0] || '';
         if (tok.charAt(0) !== '/') return [];
-        var out = COMMANDS.filter(function (c) { return c.cmd !== tok && c.cmd.indexOf(tok) === 0; });
-        return out.slice(0, 20);
+        return COMMANDS.filter(function (c) { return c.cmd !== tok && c.cmd.indexOf(tok) === 0; });
       },
 
       /** 菜单当前选中项下标（menuIdx 越界时夹回最后一项，保证始终有高亮） */
       menuSel: function () {
         var n = this.menuItems.length;
         return n ? Math.min(this.menuIdx, n - 1) : 0;
+      },
+
+      // —— 菜单分页：每页 6 条，第 7 行固定显示页码 ——
+      MENU_PAGE_SIZE: 6,
+
+      menuPageTotal: function () {
+        return Math.max(1, Math.ceil(this.menuItems.length / this.MENU_PAGE_SIZE));
+      },
+
+      /** 当前页号（由选中项位置推出，键盘移动跨页自动跟随） */
+      menuPage: function () {
+        return Math.min(Math.floor(this.menuSel / this.MENU_PAGE_SIZE), this.menuPageTotal - 1);
+      },
+
+      /** 当前页可见候选，附全局下标 gi（高亮与点击补全都用全局位置） */
+      menuPageItems: function () {
+        var size = this.MENU_PAGE_SIZE;
+        var start = this.menuPage * size;
+        return this.menuItems.slice(start, start + size).map(function (c, k) {
+          return { cmd: c.cmd, hint: c.hint, gi: start + k };
+        });
       },
 
       /**
@@ -530,6 +550,17 @@
         if (!mi) return;
         this.setInput(mi.cmd + ' ');
         this.focusInput();
+      },
+
+      /** 菜单上滚轮：滚一格 = 翻一页（上=上一页，下=下一页），高亮落到新页第一条 */
+      menuWheel: function (e) {
+        if (!this.menuItems.length) return;
+        e.preventDefault();
+        var d = e.deltaY || -(e.wheelDelta || 0);
+        if (!d) return;
+        var page = this.menuPage + (d > 0 ? 1 : -1);
+        page = Math.max(0, Math.min(page, this.menuPageTotal - 1));
+        if (page !== this.menuPage) this.menuIdx = page * this.MENU_PAGE_SIZE;
       },
 
       setInput: function (v) {

@@ -13,12 +13,14 @@
     <div v-for="ln in viewLines" :class="['ln', ln.cls]" v-html="ln.html"></div>
   </div>
 
-  <!-- 斜杠命令菜单：纯键盘 ↑↓ 选择、Tab 补全、Enter 执行、Esc 关闭 -->
-  <div id="slashmenu" v-show="menuItems.length">
-    <div v-for="(mi, i) in menuItems" :class="['mi', { sel: i === menuSel }]"
-         @mousedown.prevent="pickMenu(i)">
+  <!-- 斜杠命令菜单：纯键盘 ↑↓ 选择（跨页自动跟随）、Tab 补全、Enter 执行、Esc 关闭；
+       每页最多 6 条，第 7 行固定页码，鼠标滚轮一格翻一页 -->
+  <div id="slashmenu" v-show="menuItems.length" @wheel.prevent="menuWheel">
+    <div v-for="mi in menuPageItems" :key="mi.cmd" :class="['mi', { sel: mi.gi === menuSel }]"
+         @mousedown.prevent="pickMenu(mi.gi)">
       <span class="cmd">{{ mi.cmd }}</span><span class="hint">{{ mi.hint }}</span>
     </div>
+    <div class="pageinfo">({{ menuPage + 1 }}/{{ menuPageTotal }})</div>
   </div>
 
   <div id="inputrow">

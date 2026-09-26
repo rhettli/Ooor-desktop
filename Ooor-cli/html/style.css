@@ -108,8 +108,7 @@ html, body {
   margin: 0 10px;
   border: 1px solid #3a3a3a;
   background: #0c0c0c;
-  max-height: 9.4em;          /* 最多约 6 行，超出滚动 */
-  overflow-y: auto;
+  overflow: hidden;           /* 分页显示（每页 6 条 + 页码行），永不出现滚动条 */
   cursor: default;            /* 覆盖菜单时用默认箭头，不出文本 I 形光标 */
 }
 #slashmenu .mi {
@@ -124,6 +123,13 @@ html, body {
 #slashmenu .mi.sel .cmd { color: #9be9ff; }
 #slashmenu .mi .hint { color: #7d7d7d; }
 #slashmenu .mi.sel .hint { color: #c9d6e2; }
+/* 第 7 行固定页码 (当前页/总页数)，滚轮翻页 */
+#slashmenu .pageinfo {
+  padding: 1px 10px;
+  border-top: 1px solid #3a3a3a;
+  color: #7d7d7d;
+  text-align: right;
+}
 .hidden { display: none !important; }
 
 /* ==================== 输入行 ==================== */
@@ -171,9 +177,9 @@ html, body {
 }
 
 /* 滚动条：暗色细条 */
-#output::-webkit-scrollbar, #slashmenu::-webkit-scrollbar { width: 10px; }
-#output::-webkit-scrollbar-track, #slashmenu::-webkit-scrollbar-track { background: #0a0a0a; }
-#output::-webkit-scrollbar-thumb, #slashmenu::-webkit-scrollbar-thumb {
+#output::-webkit-scrollbar { width: 10px; }
+#output::-webkit-scrollbar-track { background: #0a0a0a; }
+#output::-webkit-scrollbar-thumb {
   background: #2e2e2e;
   border-radius: 0;
 }
