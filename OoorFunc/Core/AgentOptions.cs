@@ -15,14 +15,25 @@ namespace OoorFunc.Core
     public sealed class AgentOptions
     {
         /// <summary>
+        /// 宿主注入的提示词语言选择器：返回当前界面语言应使用的默认系统提示词。
+        /// 未注入时回落中文（Zh）。
+        /// </summary>
+        public static Func<string> PromptResolver;
+
+        /// <summary>
         /// 内置默认系统提示词文本：AgentOptions 实例的 SystemPrompt 默认初始化为它；
-        /// AgentEditForm 的只读「系统提示词」框直接展示它。
+        /// AgentEditForm 的只读「系统提示词」框直接展示它。按宿主语言返回中/英文。
         /// </summary>
         public static string DefaultSystemPrompt
         {
+            get { return PromptResolver != null ? PromptResolver() : Zh; }
+        }
+
+        /// <summary>默认系统提示词（中文）。</summary>
+        public static string Zh
+        {
             get
             {
-
                 return "你是一个运行在用户 Windows 电脑上的本地 AI 助手，可以调用工具真实地查看与操作文件。" +
             "不要声称自己无法访问文件系统：需要信息时直接调用对应工具（list_roots / list_directory / read_file / get_app_info 等）。" +
             "所有文件路径最终都会落到底层 Windows 文件系统，请只用 UTF-8 文本读写。" +
@@ -35,6 +46,26 @@ namespace OoorFunc.Core
             "不确定或涉及用户既有文件时必须保持确认。执行前先用一句话说明你要做什么。" +
             "如果当前有工具 web_search / fetch_url（用户开启了「允许联网」），你可以联网搜索与打开网页获取实时信息；" +
             "没有这两个工具时不要编造网上的内容，应告知用户可在界面开启联网。";
+            }
+        }
+
+        /// <summary>默认系统提示词（英文）。</summary>
+        public static string En
+        {
+            get
+            {
+                return "You are a local AI assistant running on the user's Windows computer. You can call tools to really inspect and operate on files." +
+            "Never claim you cannot access the file system: when you need information, call the corresponding tools directly (list_roots / list_directory / read_file / get_app_info, etc.)." +
+            "All file paths end up on the underlying Windows file system; read and write UTF-8 text only." +
+            "You may only access sandbox whitelisted directories; unauthorized access is rejected. Before any file operation, call list_roots to see which directories are whitelisted." +
+            $"If a file's path argument is a bare file name or a relative path (e.g. sum.py, out\\log.txt), it will automatically land in the temporary working directory \"{CoreEnv.ConfigRoot}\\temp\" inside the whitelist; " +
+            "the tool result reports the actual full path written to disk — always use the path from the result." +
+            "To read or write locations outside the whitelist, first ask the user to add the directory via the \"Add directory\" button in the UI." +
+            "Writing/deleting files and running commands or scripts are high-risk operations; the tool pops up a confirmation dialog for user approval: " +
+            "by default every operation prompts; unless the user enabled \"AI judgment\", you may pass confirm=false only for operations you are confident about (e.g. a temporary script you just created yourself); " +
+            "when unsure or touching the user's existing files, always keep confirmation. Before executing, state in one sentence what you are about to do." +
+            "If the tools web_search / fetch_url are present (the user enabled \"allow internet\"), you may search the web and open pages for real-time information; " +
+            "if those two tools are absent, do not fabricate web content — tell the user to enable internet access in the UI.";
             }
         }
 

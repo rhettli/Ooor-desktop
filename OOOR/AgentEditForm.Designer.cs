@@ -43,7 +43,7 @@ namespace ooor
             // lblName
             // 
             this.lblName.AutoSize = true;
-            this.lblName.Location = new System.Drawing.Point(16, 15);
+            this.lblName.Location = new System.Drawing.Point(16, 20);
             this.lblName.Name = "lblName";
             this.lblName.Size = new System.Drawing.Size(64, 24);
             this.lblName.TabIndex = 0;

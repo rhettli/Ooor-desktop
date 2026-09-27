@@ -70,6 +70,27 @@ namespace ooor
             // MCP 列表为空时唯一一项是占位提示
             if (!_hasMcp && clbMcp.Items.Count > 0)
                 clbMcp.Items[0] = L.T("age.mcp.empty");
+
+            // 内置函数描述随语言变化，重建列表并保留勾选
+            var checkedTools = new List<string>();
+            for (int i = 0; i < clbTools.Items.Count; i++)
+            {
+                if (!clbTools.GetItemChecked(i)) continue;
+                string s = clbTools.Items[i].ToString();
+                int sep = s.IndexOf(" — ", StringComparison.Ordinal);
+                checkedTools.Add(sep > 0 ? s.Substring(0, sep) : s);
+            }
+            clbTools.BeginUpdate();
+            try
+            {
+                clbTools.Items.Clear();
+                foreach (var kv in BuiltinToolCatalog.All)
+                {
+                    int idx = clbTools.Items.Add(kv.Key + " — " + L.T("bts.tool." + kv.Key));
+                    if (checkedTools.Contains(kv.Key)) clbTools.SetItemChecked(idx, true);
+                }
+            }
+            finally { clbTools.EndUpdate(); }
         }
 
         private void LoadData()
@@ -92,8 +113,8 @@ namespace ooor
             // 内置工具
             clbTools.Items.Clear();
             foreach (var kv in BuiltinToolCatalog.All)
-            {
-                int idx = clbTools.Items.Add(kv.Key + " — " + kv.Value);
+                {
+                    int idx = clbTools.Items.Add(kv.Key + " — " + L.T("bts.tool." + kv.Key));
                 if (_record.BoundTools != null && _record.BoundTools.Contains(kv.Key))
                     clbTools.SetItemChecked(idx, true);
             }

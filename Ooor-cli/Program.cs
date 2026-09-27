@@ -53,6 +53,12 @@ namespace Ooor_cli
         {
             CliUi.Init();
             CliLang.Init();
+
+            // 默认系统提示词随 CLI 语言切换（webcli 与 REPL 的 AgentOptions 默认值共用）
+            OoorFunc.Core.AgentOptions.PromptResolver = () => CliLang.IsEnglish
+                ? OoorFunc.Core.AgentOptions.En
+                : OoorFunc.Core.AgentOptions.Zh;
+
             try { Console.Title = "Ooor-cli"; } catch { }
 
             // ===================== 参数 =====================

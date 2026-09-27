@@ -62,6 +62,11 @@ namespace ooor.Core
                     if (!string.IsNullOrEmpty(kv.Key)) _dict[kv.Key] = kv.Value ?? "";
 
                 CurrentLanguage = code;
+
+                // 默认系统提示词随界面语言切换（AgentEditForm 展示框与 AgentOptions 默认值共用）
+                OoorFunc.Core.AgentOptions.PromptResolver = () => code == "en"
+                    ? OoorFunc.Core.AgentOptions.En
+                    : OoorFunc.Core.AgentOptions.Zh;
             }
             catch
             {
