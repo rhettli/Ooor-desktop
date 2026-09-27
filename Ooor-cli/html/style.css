@@ -41,7 +41,7 @@ html, body {
 
 .ln.user   { color: #cccccc; }
 .ln.user .prompt, .prompt { color: #16c60c; font-weight: bold; }
-.ln.sys    { color: #8c8c8c; }
+.ln.sys    { color: #9a9a9a; }
 .ln.err    { color: #e74856; }
 .ln.banner { color: #e7e7e7; font-weight: bold; }
 
@@ -49,8 +49,9 @@ html, body {
 .ln.assistant i { font-style: italic; }
 
 /* 思考通道：灰色 + 左侧竖线，视觉同原生 CLI 的 │ */
-.ln.reasoning { color: #8c8c8c; }
-.ln.reasoning .rmark { color: #6c6c6c; }
+/* thinking：比系统提示更暗一档 + 斜体（与灰色系统行拉开层次） */
+.ln.reasoning { color: #7f7f7f; font-style: italic; }
+.ln.reasoning .rmark { color: #7f7f7f; font-style: normal; }
 
 /* 工具行：黄色调用行 + 灰色缩进结果 */
 .ln.toolhead { color: #f9f1a5; }
@@ -87,6 +88,11 @@ html, body {
 .deco-cyan { color: #61d6d6; }
 .heading { color: #ffffff; font-weight: bold; }
 .quote { color: #8c8c8c; }
+
+/* 通用语义色帮手（横幅状态徽章 / 工具状态 / 版本号等处内联使用） */
+.c-gr { color: #16c60c; }
+.c-rd { color: #e74856; }
+.c-dim { color: #8a8a8a; }
 
 /* 模型创建的文件：正文中的路径链接 / 结尾文件清单（点击交 C# 用默认程序打开） */
 .filelink {

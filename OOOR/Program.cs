@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 using ooor.Core;
 
@@ -38,7 +39,17 @@ namespace ooor
             }
             LanguageManager.Instance.LoadLanguage(settings.Language);
 
+            // 读取图标：按 exe 目录解析（快捷方式/外部程序拉起时 CWD 可能不是 exe 目录）；
+            // 用 new Icon(path) 拷贝加载（FromFile 会锁住 ico 文件）；失败不阻断启动
+            try
+            {
+                string icoPath = System.IO.Path.Combine(Application.StartupPath, "ooor.ico");
+                if (System.IO.File.Exists(icoPath)) DEF.Icon = new Icon(icoPath);
+            }
+            catch { /* 图标缺失或损坏时忽略，窗口退回默认图标 */ }
+
             var main = new MainForm { AutoStartMode = autoStart };
+            main.Icon = DEF.Icon;   // 主窗口与任务栏显示 ooor 图标
             Application.Run(main);
         }
 

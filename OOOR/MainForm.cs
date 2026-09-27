@@ -197,7 +197,7 @@ namespace ooor
         private bool TryResolveCtx(out long ctx)
         {
             if (IsParamDefaultText(cmbCtx.Text)) { ctx = DefaultCtxForModel(); return true; }
-            return TryParsePositive(cmbCtx.Text, out ctx, "上下文长度");
+            return TryParsePositive(cmbCtx.Text, out ctx, LanguageManager.Instance.T("common.fld.ctx"));
         }
 
         /// <summary>解析预测长度：默认项按模型取默认值，其余按输入正整数校验（弹窗提示）</summary>
@@ -206,10 +206,11 @@ namespace ooor
             if (IsParamDefaultText(cmbNPred.Text)) { npred = DefaultNPredForModel(); return true; }
 
             long v;
-            if (!TryParsePositive(cmbNPred.Text, out v, "预测长度")) { npred = 0; return false; }
+            if (!TryParsePositive(cmbNPred.Text, out v, LanguageManager.Instance.T("common.fld.npred"))) { npred = 0; return false; }
             if (v > int.MaxValue)
             {
-                MessageBox.Show(this, "预测长度过大", "参数错误", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, LanguageManager.Instance.T("common.npredTooLarge"), LanguageManager.Instance.T("common.paramError"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 npred = 0;
                 return false;
             }
@@ -358,7 +359,7 @@ namespace ooor
             // 没有版本可选时直接报错（提示用户把 llama.cpp 发行版放进 llama-bin）
             if (_versions.Count == 0)
             {
-                SetStatus("未检测到可用的 llama 版本", true);
+                SetStatus(LanguageManager.Instance.T("llama.noVersion"), true);
                 LogT("log.err.noLlamaBin", LlamaRuntime.LlamaBinsDir);
                 LogT("log.hint.putLlama");
                 SetRunUi(false);
@@ -432,7 +433,7 @@ namespace ooor
                 LogT("log.warn.versionDisabled", v.Name);
                 LlamaRuntime.SetSelectedVersion(null);
                 SelectVersion(null);
-                SetStatus("当前选中的版本已被禁用", true);
+                SetStatus(LanguageManager.Instance.T("llama.versionDisabled"), true);
                 SetRunUi(false);
                 return;
             }
@@ -443,14 +444,14 @@ namespace ooor
 
             if (!v.HasServerEx || !LlamaRuntime.ServerPresent)
             {
-                SetStatus("当前版本缺少 " + LlamaRuntime.ServerExeName, true);
+                SetStatus(string.Format(LanguageManager.Instance.T("llama.versionMissingServer"), LlamaRuntime.ServerExeName), true);
                 LogT("log.err.noServer", LlamaRuntime.ServerExePath);
                 LogT("log.hint.putServer");
                 SetRunUi(false);
             }
             else
             {
-                SetStatus("已检测到 llama-server（" + v.Name + "）", false);
+                SetStatus(string.Format(LanguageManager.Instance.T("llama.serverDetected"), v.Name), false);
                 LogT("log.info.serverPath", LlamaRuntime.ServerExePath);
                 if (!_server.IsRunning) SetRunUi(false);
             }
@@ -498,7 +499,7 @@ namespace ooor
             if (model == null)
             {
                 txtModel.Text = "";
-                ClearMmprojUi("（未选择模型）");
+                ClearMmprojUi(LanguageManager.Instance.T("llama.mmprojNoModel"));
                 return;
             }
 
@@ -655,7 +656,7 @@ namespace ooor
                 // 模型可能已被删除/软删除：只显示文件名并提示
                 _selectedModel = null;
                 txtModel.Text = Path.GetFileName(st.ModelPath);
-                ClearMmprojUi("（模型已不在当前列表中）");
+                ClearMmprojUi(LanguageManager.Instance.T("llama.mmprojNotInList"));
                 LogT("log.warn.modelGone", st.ModelPath);
             }
 
@@ -667,7 +668,7 @@ namespace ooor
 
             _webReady = false;
             SetRunUi(true);
-            SetStatus("服务运行中（上次会话恢复，PID=" + _server.Pid + "）", false);
+            SetStatus(string.Format(LanguageManager.Instance.T("llama.runningRestored"), _server.Pid), false);
             LogT("log.info.serverRunning", _server.Pid);
             LogT("log.info.cannotRetakeLog");
 
@@ -707,7 +708,8 @@ namespace ooor
                         if (!_server.IsRunning || _webReady) return;
                         _webReady = true;
                         ToolStripMenuItemOpenConsole.Enabled = true;
-                        SetStatus("服务已就绪（恢复）  http://" + HostForDisplay() + ":" + _server.Port, false);
+                        SetStatus(string.Format(LanguageManager.Instance.T("llama.readyRestored"),
+                            HostForDisplay(), _server.Port), false);
                     });
                 }
                 catch { /* 窗口关闭中 */ }
@@ -743,7 +745,7 @@ namespace ooor
         {
             using (var dlg = new FolderBrowserDialog())
             {
-                dlg.Description = "选择存放 .gguf 模型的文件夹（只记录引用，不复制文件）";
+                dlg.Description = LanguageManager.Instance.T("import.pickFolder");
                 dlg.ShowNewFolderButton = false;
 
                 // 上次导入过的位置作为起始目录，方便再次选择
@@ -786,8 +788,8 @@ namespace ooor
                         // 未新增：该文件夹位于 models 目录内，或已在引用列表中
                         LogT("log.hint.refSkipped", folder);
                         MessageBox.Show(this,
-                            "未新增引用：该文件夹位于 models 目录内\r\n（会被自动扫描），或已在引用列表中。",
-                            "导入模型", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            LanguageManager.Instance.T("import.noNewRef"),
+                            LanguageManager.Instance.T("import.title"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
 
                     ReloadModels();
@@ -795,7 +797,8 @@ namespace ooor
                 catch (Exception ex)
                 {
                     LogT("log.err.importModel", ex.Message);
-                    MessageBox.Show(this, "导入模型失败：" + ex.Message, "错误",
+                    MessageBox.Show(this, string.Format(LanguageManager.Instance.T("import.failed"), ex.Message),
+                        LanguageManager.Instance.T("common.error"),
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
@@ -944,17 +947,17 @@ namespace ooor
             {
                 // 另存为：输入新方案名
                 name = "";
-                if (!InputBox.Show(this, "另存方案", "方案名称：", ref name)) return;
+                if (!InputBox.Show(this, LanguageManager.Instance.T("slu.saveAsTitle"), LanguageManager.Instance.T("slu.nameLabel"), ref name)) return;
                 name = (name ?? "").Trim();
                 if (name.Length == 0)
                 {
-                    MessageBox.Show(this, "方案名称不能为空。", "保存方案",
+                    MessageBox.Show(this, LanguageManager.Instance.T("slu.nameEmpty"), LanguageManager.Instance.T("slu.title"),
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
                 if (name == ChooseProfileItem)
                 {
-                    MessageBox.Show(this, "该名称是保留的占位值，请换一个名称。", "保存方案",
+                    MessageBox.Show(this, LanguageManager.Instance.T("slu.reservedName"), LanguageManager.Instance.T("slu.title"),
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -962,7 +965,7 @@ namespace ooor
             else
             {
                 // 覆盖：确认后写入
-                if (MessageBox.Show(this, "是否覆盖方案「" + name + "」？", "保存方案",
+                if (MessageBox.Show(this, string.Format(LanguageManager.Instance.T("slu.overwriteAsk"), name), LanguageManager.Instance.T("slu.title"),
                         MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                     return;
             }
@@ -984,7 +987,7 @@ namespace ooor
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "保存方案失败：" + ex.Message, "保存方案",
+                MessageBox.Show(this, string.Format(LanguageManager.Instance.T("slu.saveFailed"), ex.Message), LanguageManager.Instance.T("slu.title"),
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -1029,7 +1032,7 @@ namespace ooor
             if (_versions.Count == 0)
             {
                 var r=MessageBox.Show(this,
-                    "未检测到可用的 llama 版本。\r\n是否去管理窗口？\r\n", "选择 llama", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                    LanguageManager.Instance.T("sel.noVersionAsk") + "\r\n", LanguageManager.Instance.T("sel.title"), MessageBoxButtons.YesNo, MessageBoxIcon.Information);
 
                 if (r==DialogResult.Yes)
                 {
@@ -1057,7 +1060,7 @@ namespace ooor
         {
             if (_models.Count == 0)
             {
-                var r=MessageBox.Show(this,"模型列表为空。\r\n是否去模型管理窗口？","选择模型", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                var r=MessageBox.Show(this,LanguageManager.Instance.T("sel.noModelAsk"),LanguageManager.Instance.T("sel.titleModel"), MessageBoxButtons.YesNo, MessageBoxIcon.Information);
                 if (r == DialogResult.Yes)
                 {
                     toolStripButtonManageModels_Click(sender, e);
@@ -1083,7 +1086,7 @@ namespace ooor
             // 按钮平时禁用，此处兜底：服务未输出监听地址前不允许打开
             if (!_webReady || !_server.IsRunning)
             {
-                MessageBox.Show(this, "服务尚未就绪。请先启动服务，等待日志出现监听地址。", "提示",
+                MessageBox.Show(this, LanguageManager.Instance.T("open.notReady"), LanguageManager.Instance.T("common.notice"),
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -1091,7 +1094,7 @@ namespace ooor
             string host = HostForDisplay();
             if (!ushort.TryParse(txtPort.Text.Trim(), out ushort port) || port == 0)
             {
-                MessageBox.Show(this, "端口必须是 1-65535 的整数", "参数错误", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, LanguageManager.Instance.T("common.portRange"), LanguageManager.Instance.T("common.paramError"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtPort.Focus();
                 return;
             }
@@ -1104,7 +1107,7 @@ namespace ooor
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "打开浏览器失败：" + ex.Message, "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, string.Format(LanguageManager.Instance.T("open.browserFailed"), ex.Message), LanguageManager.Instance.T("common.notice"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -1122,12 +1125,12 @@ namespace ooor
             var model = _selectedModel;
             if (model == null)
             {
-                MessageBox.Show(this, "请先选择一个 .gguf 模型", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, LanguageManager.Instance.T("cmd.noModel"), LanguageManager.Instance.T("common.notice"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             if (!LlamaRuntime.ServerPresent)
             {
-                MessageBox.Show(this, "未检测到 llama-server.exe，请先部署程序文件。", "提示",
+                MessageBox.Show(this, LanguageManager.Instance.T("run.noServer"), LanguageManager.Instance.T("common.notice"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -1135,10 +1138,10 @@ namespace ooor
             long ctx; int npred, ngl, port; string host;
             if (!TryResolveCtx(out ctx)) return;
             if (!TryResolveNPred(out npred)) return;
-            if (!TryParseNonNeg(txtNgl.Text, out ngl, "GPU 层数")) return;
+            if (!TryParseNonNeg(txtNgl.Text, out ngl, LanguageManager.Instance.T("common.fld.ngl"))) return;
             if (!ushort.TryParse(txtPort.Text.Trim(), out ushort portU16) || portU16 == 0)
             {
-                MessageBox.Show(this, "端口必须是 1-65535 的整数", "参数错误", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, LanguageManager.Instance.T("common.portRange"), LanguageManager.Instance.T("common.paramError"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtPort.Focus();
                 return;
             }
@@ -1174,12 +1177,12 @@ namespace ooor
                 ServerManager.OnStarted(model, ctx, npred, ngl, host, port);
 
                 SetRunUi(true);
-                SetStatus("服务启动中…等待监听地址", false);
+                SetStatus(LanguageManager.Instance.T("run.starting"), false);
             }
             catch (Exception ex)
             {
                 LogT("log.err.startFailed", ex.Message);
-                MessageBox.Show(this, ex.Message, "启动失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, ex.Message, LanguageManager.Instance.T("run.startFailed"), MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 // 启动失败：立即隐藏进度遮罩
                 _progressTimer.Stop();
@@ -1220,9 +1223,10 @@ namespace ooor
                         }
 
                         // 0 表示本来就没有存活实例（含残留也没找到）
-                        AppendLog(killed > 0
-                            ? "[信息] 已停止 llama-server（含残留共 " + killed + " 个进程）"
-                            : "[信息] 没有正在运行的 llama-server");
+                        if (killed > 0)
+                            LogT("log.info.stopKilled", killed);
+                        else
+                            LogT("log.info.stopNone");
 
                         // 清除运行状态记录（含 run_state.conf）
                         ServerManager.OnStopped();
@@ -1231,7 +1235,7 @@ namespace ooor
                         if (!_server.IsRunning)
                         {
                             SetRunUi(false);
-                            SetStatus("服务已停止", false);
+                            SetStatus(LanguageManager.Instance.T("llama.stopped"), false);
                         }
                     });
                 }
@@ -1248,38 +1252,40 @@ namespace ooor
         /// </summary>
         private void ToolStripMenuItemRunAgent_Click(object sender, EventArgs e)
         {
+            var L = LanguageManager.Instance;
             string exe = Path.Combine(Application.StartupPath, "Ooor-cli.exe");
             if (!File.Exists(exe))
             {
-                MessageBox.Show(this, "找不到 Ooor-cli.exe（应与本程序同目录）：\r\n" + exe,
-                    "打开窗口AI助手", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, string.Format(L.T("ccr.msg.cliMissing"), exe),
+                    L.T("console.web.title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (!_server.IsRunning &&
                 MessageBox.Show(this,
-                    "本地服务未运行，窗口 AI 助手可能连不上模型。\r\n是否仍要打开？",
-                    "打开窗口AI助手", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                    L.T("console.web.notRunning"),
+                    L.T("console.web.title"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 return;
 
             try
             {
+                var dev = Debugger.IsAttached ? " --devtools" : "";
                 var psi = new ProcessStartInfo
                 {
                     FileName = exe,
-                    Arguments = "--web --pause --devtools",
+                    Arguments = $"--web --pause{dev}",
                     UseShellExecute = false,
                     CreateNoWindow = true,                    // 网页终端窗口自身就是界面，不弹控制台/PowerShell
                     WorkingDirectory = LlamaRuntime.ConfigRoot // CLI 会把工作目录加入沙盒白名单
                 };
                 Process.Start(psi);
                 LogT("log.info.cliOpened");
-                SetStatus("已打开窗口 AI 助手", false);
+                SetStatus(L.T("console.web.opened"), false);
             }
             catch (Exception ex)
             {
                 LogT("log.err.cliStart", ex.Message);
-                MessageBox.Show(this, ex.Message, "打开窗口AI助手", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, ex.Message, L.T("console.web.title"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -1291,18 +1297,19 @@ namespace ooor
         /// </summary>
         private void ToolStripMenuItemOpenCli_Click(object sender, EventArgs e)
         {
+            var L = LanguageManager.Instance;
             string exe = Path.Combine(Application.StartupPath, "Ooor-cli.exe");
             if (!File.Exists(exe))
             {
-                MessageBox.Show(this, "找不到 Ooor-cli.exe（应与本程序同目录）：\r\n" + exe,
-                    "AI 助手（cli）", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, string.Format(L.T("ccr.msg.cliMissing"), exe),
+                    L.T("console.cli.title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (!_server.IsRunning &&
                 MessageBox.Show(this,
-                    "本地服务未运行，Ooor-cli 可能连不上模型。\r\n是否仍要打开？",
-                    "AI 助手（cli）", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                    L.T("console.cli.notRunning"),
+                    L.T("console.cli.title"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 return;
 
             try
@@ -1320,12 +1327,12 @@ namespace ooor
                 };
                 Process.Start(psi);
                 LogT("log.info.cliOpened");
-                SetStatus("已打开 AI 助手（cli）", false);
+                SetStatus(L.T("console.cli.opened"), false);
             }
             catch (Exception ex)
             {
                 LogT("log.err.cliStart", ex.Message);
-                MessageBox.Show(this, ex.Message, "AI 助手（cli）", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, ex.Message, L.T("console.cli.title"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -1336,18 +1343,19 @@ namespace ooor
         /// </summary>
         private void ToolStripMenuItemOpenAllPer_Click(object sender, EventArgs e)
         {
+            var L = LanguageManager.Instance;
             string exe = Path.Combine(Application.StartupPath, "Ooor-cli.exe");
             if (!File.Exists(exe))
             {
-                MessageBox.Show(this, "找不到 Ooor-cli.exe（应与本程序同目录）：\r\n" + exe,
-                    "打开控制台AI助手（开放权限）", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, string.Format(L.T("ccr.msg.cliMissing"), exe),
+                    L.T("console.fullperm.title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (!_server.IsRunning &&
                 MessageBox.Show(this,
-                    "本地服务未运行，Ooor-cli 可能连不上模型。\r\n是否仍要打开？",
-                    "打开控制台AI助手（开放权限）", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                    L.T("console.cli.notRunning"),
+                    L.T("console.fullperm.title"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 return;
 
             // 收集白名单：与 Ooor-cli 启动后实际白名单保持一致（内置 models/config + agent.conf 追加项）
@@ -1383,23 +1391,19 @@ namespace ooor
                 catch { }
             }
             string rootText = normRoots.Count == 0
-                ? "  （无）"
+                ? L.T("console.fullperm.emptyRoots")
                 : string.Join("\r\n", normRoots.ConvertAll(p => "  • " + p));
 
             string msg =
-                "将以「开放权限」模式启动 Ooor-cli（控制台 AI 助手）：\r\n" +
-                "  • 文件读写 / 删除：开\r\n" +
-                "  • 执行命令：开\r\n" +
-                "  • 联网工具（web_search / fetch_url）：开\r\n" +
-                "  • 高危操作确认：跳过（模型可自行判断，无需每次 Y/N）\r\n\r\n" +
-                "AI 仅能访问下面的白名单目录（沙盒外路径会被拒绝）：\r\n" +
+                L.T("console.fullperm.intro") +
+                L.T("console.fullperm.roots") + "\r\n" +
                 rootText + "\r\n\r\n" +
-                "工作目录（./）： " + cwd + "\r\n" +
-                "如写文件，请让 AI 用相对路径（如 ./xxx.txt），CLI 会自动落到该目录下的 temp 子目录：\r\n" +
+                string.Format(L.T("console.fullperm.cwd"), cwd) + "\r\n" +
+                L.T("console.fullperm.relative") + "\r\n" +
                 "  " + tempDir + "\r\n\r\n" +
-                "是否现在打开控制台？";
+                L.T("console.fullperm.confirm");
 
-            if (MessageBox.Show(this, msg, "打开控制台AI助手（开放权限）",
+            if (MessageBox.Show(this, msg, L.T("console.fullperm.title"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
                 return;
 
@@ -1417,12 +1421,12 @@ namespace ooor
                 };
                 Process.Start(psi);
                 LogT("log.info.cliFullPerm");
-                SetStatus("已打开控制台AI助手（开放权限）", false);
+                SetStatus(L.T("console.fullperm.opened"), false);
             }
             catch (Exception ex)
             {
                 LogT("log.err.cliStart", ex.Message);
-                MessageBox.Show(this, ex.Message, "打开控制台AI助手（开放权限）",
+                MessageBox.Show(this, ex.Message, L.T("console.fullperm.title"),
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -1436,9 +1440,10 @@ namespace ooor
         private void ToolStripMenuItemRunCli_Click(object sender, EventArgs e)
         {
             var model = _selectedModel;
+            var L = LanguageManager.Instance;
             if (model == null)
             {
-                MessageBox.Show(this, "请先选择一个 .gguf 模型", "cmd 窗口运行",
+                MessageBox.Show(this, L.T("cmd.noModel"), L.T("cmd.title"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -1447,22 +1452,21 @@ namespace ooor
             if (cliExe == null)
             {
                 MessageBox.Show(this,
-                    "当前版本目录下没有 " + LlamaRuntime.CliExeName + "，无法命令行交互运行。\r\n" +
-                    "请在「选择llama」窗口重新下载 / 部署完整发行包：\r\n" + LlamaRuntime.BaseDir,
-                    "cmd 窗口运行", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    string.Format(L.T("cmd.noCli"), LlamaRuntime.CliExeName, LlamaRuntime.BaseDir),
+                    L.T("cmd.title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             long ctx; int npred, ngl;
             if (!TryResolveCtx(out ctx)) return;
             if (!TryResolveNPred(out npred)) return;
-            if (!TryParseNonNeg(txtNgl.Text, out ngl, "GPU 层数")) return;
+            if (!TryParseNonNeg(txtNgl.Text, out ngl, LanguageManager.Instance.T("common.fld.ngl"))) return;
 
             // 服务已在跑：再开一个 CLI 会加载第二份模型，内存/显存翻倍，先确认
             if (_server.IsRunning &&
                 MessageBox.Show(this,
-                    "本地服务正在运行，cmd 窗口会再加载一份模型（内存 / 显存占用翻倍）。是否继续？",
-                    "cmd 窗口运行", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                    L.T("cmd.serverRunningConfirm"),
+                    L.T("cmd.title"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 return;
 
             // 多模态投影：以下拉框选中的文件为准（默认即自动匹配结果），兜底再自动检测一次
@@ -1483,12 +1487,12 @@ namespace ooor
 
                 LogT("log.info.cmdRunModel", cmdLine);
                 LogT("log.info.cmdHint");
-                SetStatus("已在 cmd 窗口运行模型（可对话）", false);
+                SetStatus(L.T("cmd.opened"), false);
             }
             catch (Exception ex)
             {
                 LogT("log.err.cmdStart", ex.Message);
-                MessageBox.Show(this, ex.Message, "cmd 窗口运行", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, ex.Message, L.T("cmd.title"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -1506,7 +1510,8 @@ namespace ooor
                     {
                         _webReady = true;
                         ToolStripMenuItemOpenConsole.Enabled = true;
-                        SetStatus("服务已就绪  http://" + HostForDisplay() + ":" + _server.Port, false);
+                        SetStatus(string.Format(LanguageManager.Instance.T("llama.ready"),
+                            HostForDisplay(), _server.Port), false);
 
                         // 进度条跳满 → 500ms 后隐藏 panelProgress
                         _progressTimer.Stop();
@@ -1561,7 +1566,8 @@ namespace ooor
                     // 服务退出（手动停止或自行退出）：清除运行状态记录
                     ServerManager.OnStopped();
                     SetRunUi(false);
-                    SetStatus(code == 0 ? "服务已停止" : ("服务已退出 (code=" + code + ")"), code != 0);
+                    SetStatus(code == 0 ? LanguageManager.Instance.T("llama.stopped")
+                        : string.Format(LanguageManager.Instance.T("llama.exited"), code), code != 0);
 
                     // 进程退出：无论成败，立即停表隐藏进度遮罩
                     _progressTimer.Stop();
@@ -1618,14 +1624,16 @@ namespace ooor
         private bool TryParsePositive(string text, out long value, string fieldName)
         {
             if (long.TryParse((text ?? "").Trim(), out value) && value > 0) return true;
-            MessageBox.Show(this, fieldName + "必须是正整数", "参数错误", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, string.Format(LanguageManager.Instance.T("common.mustPositive"), fieldName),
+                LanguageManager.Instance.T("common.paramError"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
         private bool TryParseNonNeg(string text, out int value, string fieldName)
         {
             if (int.TryParse((text ?? "").Trim(), out value) && value >= 0) return true;
-            MessageBox.Show(this, fieldName + "必须是 ≥0 的整数", "参数错误", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, string.Format(LanguageManager.Instance.T("common.mustNonNeg"), fieldName),
+                LanguageManager.Instance.T("common.paramError"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
@@ -1664,7 +1672,8 @@ namespace ooor
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, ex.Message, LanguageManager.Instance.T("common.notice"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -1685,7 +1694,7 @@ namespace ooor
                 if (portText.Length == 0) port = 6080;
                 else
                 {
-                    MessageBox.Show(this, "端口必须是 1-65535 的整数。", "参数错误",
+                    MessageBox.Show(this, LanguageManager.Instance.T("common.portRange"), LanguageManager.Instance.T("common.paramError"),
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     txtPort.Focus();
                     return;
@@ -1705,9 +1714,8 @@ namespace ooor
             catch { }
 
             ViewUrlDialogForm.Show(this, addr, null,
-                "OpenAPI 地址（OpenAI 兼容接口）",
-                "本服务提供 OpenAI 兼容接口（/v1/chat/completions、/v1/models 等），\n"
-                + "把下面的基础地址填入支持自定义 OpenAI 端点的客户端即可：",
+                LanguageManager.Instance.T("api.title"),
+                LanguageManager.Instance.T("api.hint"),
                 apiKey);
         }
 

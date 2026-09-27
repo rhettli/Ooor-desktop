@@ -96,7 +96,7 @@ namespace ooor.Controls
             _task = task;
             lblFileName.Text = task.FileName;
             // 保存目录直接显示纯文本路径（emoji 前缀会导致 GDI 丢字）
-            lblSavePath.Text = string.IsNullOrEmpty(task.SaveDir) ? "(未设置保存目录)" : task.SaveDir;
+            lblSavePath.Text = string.IsNullOrEmpty(task.SaveDir) ? LanguageManager.Instance.T("row.noSaveDir") : task.SaveDir;
             lblMeta.Text = FormatMetaLine(task);
             lblStatNum.Text = FormatStatLine(task);   // Bind 时也填充尺寸行，否则重启恢复的任务（不再有进度通知）会一直空白
             picIcon.Image = GetFileIconImage(task.FileName);
@@ -252,7 +252,7 @@ namespace ooor.Controls
                 Size = new Size(BtnPrimaryW, BtnHeight),
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Microsoft YaHei UI", 9.5f, FontStyle.Regular),
-                Text = "▶ 开始",
+                Text = LanguageManager.Instance.T("row.btn.start"),
                 BackColor = _btnIdle,
                 ForeColor = _btnText,
                 Cursor = Cursors.Hand
@@ -275,7 +275,7 @@ namespace ooor.Controls
                 Size = new Size(BtnDeleteW, BtnHeight),
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Microsoft YaHei UI", 9f),
-                Text = "✕ 删除",
+                Text = LanguageManager.Instance.T("row.btn.delete"),
                 BackColor = _btnIdle,
                 ForeColor = Color.FromArgb(0xA8, 0x42, 0x42),   // 低饱和红，不刺眼
                 Cursor = Cursors.Hand
@@ -310,9 +310,9 @@ namespace ooor.Controls
         {
             var now = DateTime.Now;
             string time = t.CreateTime.Date == now.Date
-                ? "今天 " + t.CreateTime.ToString("HH:mm")
+                ? string.Format(LanguageManager.Instance.T("row.today"), t.CreateTime.ToString("HH:mm"))
                 : t.CreateTime.Date == now.Date.AddDays(-1)
-                    ? "昨天 " + t.CreateTime.ToString("HH:mm")
+                    ? string.Format(LanguageManager.Instance.T("row.yesterday"), t.CreateTime.ToString("HH:mm"))
                     : t.CreateTime.ToString("MM-dd HH:mm");
 
             // 显示真实下载模式：活动中的分块任务看 LiveChunks；
@@ -320,18 +320,18 @@ namespace ooor.Controls
             // 只有真的回退过单线程（ChunkFallbackReason 非空）才显示"单线程"
             var live = DownloadManager.Instance.GetChunkSnapshots(t);
             string threadLabel;
-            if (live != null) threadLabel = live.Length + " 分块";
-            else if (!string.IsNullOrEmpty(t.ChunkFallbackReason)) threadLabel = "单线程";
-            else threadLabel = t.Threads > 1 ? t.Threads + " 分块" : "单线程";
+            if (live != null) threadLabel = string.Format(LanguageManager.Instance.T("row.chunks"), live.Length);
+            else if (!string.IsNullOrEmpty(t.ChunkFallbackReason)) threadLabel = LanguageManager.Instance.T("row.singleThread");
+            else threadLabel = t.Threads > 1 ? string.Format(LanguageManager.Instance.T("row.chunks"), t.Threads) : LanguageManager.Instance.T("row.singleThread");
             string stateLabel;
             switch (t.State)
             {
-                case DownloadState.Queued:      stateLabel = "⬤ 排队中";  break;
-                case DownloadState.Downloading: stateLabel = "⬤ 下载中";  break;
-                case DownloadState.Extracting:  stateLabel = "⬤ 解压中";  break;
-                case DownloadState.Completed:   stateLabel = "⬤ 已完成";  break;
-                case DownloadState.Paused:      stateLabel = "⬤ 已暂停";  break;
-                case DownloadState.Failed:      stateLabel = "⬤ 失败";   break;
+                case DownloadState.Queued:      stateLabel = LanguageManager.Instance.T("row.state.queued");  break;
+                case DownloadState.Downloading: stateLabel = LanguageManager.Instance.T("row.state.downloading");  break;
+                case DownloadState.Extracting:  stateLabel = LanguageManager.Instance.T("row.state.extracting");  break;
+                case DownloadState.Completed:   stateLabel = LanguageManager.Instance.T("row.state.completed");  break;
+                case DownloadState.Paused:      stateLabel = LanguageManager.Instance.T("row.state.paused");  break;
+                case DownloadState.Failed:      stateLabel = LanguageManager.Instance.T("row.state.failed");   break;
                 default: stateLabel = "—"; break;
             }
             return time + " · " + threadLabel + " · " + stateLabel;
@@ -343,11 +343,11 @@ namespace ooor.Controls
             if (t.State == DownloadState.Downloading && t.SpeedBps > 0)
                 speedPart = DownloadManager.FormatSize((long)t.SpeedBps) + "/s";
             else if (t.State == DownloadState.Completed)
-                speedPart = "完成";
+                speedPart = LanguageManager.Instance.T("row.stat.done");
             else if (t.State == DownloadState.Failed)
-                speedPart = "失败";
+                speedPart = LanguageManager.Instance.T("row.stat.failed");
             else if (t.State == DownloadState.Paused)
-                speedPart = "已暂停";
+                speedPart = LanguageManager.Instance.T("row.stat.paused");
             else
                 speedPart = "—";
 
@@ -357,15 +357,15 @@ namespace ooor.Controls
             else if (t.DownloadedBytes > 0)
                 sizePart = DownloadManager.FormatSize(t.DownloadedBytes) + " / ?";
             else
-                sizePart = "等待开始…";
+                sizePart = LanguageManager.Instance.T("row.waitStart");
 
             string eta = "";
             if (t.State == DownloadState.Downloading && t.SpeedBps > 0 && t.TotalBytes > t.DownloadedBytes)
             {
                 double sec = (t.TotalBytes - t.DownloadedBytes) / t.SpeedBps;
-                if (sec < 60) eta = " · 剩余 " + ((int)sec) + "s";
-                else if (sec < 3600) eta = " · 剩余 " + ((int)(sec / 60)) + "m" + ((int)(sec % 60)) + "s";
-                else eta = " · 剩余 " + ((int)(sec / 3600)) + "h" + (((int)(sec / 60)) % 60) + "m";
+                if (sec < 60) eta = string.Format(LanguageManager.Instance.T("row.eta"), ((int)sec) + "s");
+                else if (sec < 3600) eta = string.Format(LanguageManager.Instance.T("row.eta"), ((int)(sec / 60)) + "m" + ((int)(sec % 60)) + "s");
+                else eta = string.Format(LanguageManager.Instance.T("row.eta"), ((int)(sec / 3600)) + "h" + (((int)(sec / 60)) % 60) + "m");
             }
 
             return sizePart + " · " + speedPart + eta;
@@ -389,25 +389,25 @@ namespace ooor.Controls
             switch (state)
             {
                 case DownloadState.Queued:
-                    btnPrimary.Text = "▶ 开始";
+                    btnPrimary.Text = LanguageManager.Instance.T("row.btn.start");
                     btnPrimary.Enabled = true;
                     break;
                 case DownloadState.Downloading:
-                    btnPrimary.Text = "∥ 暂停";
+                    btnPrimary.Text = LanguageManager.Instance.T("row.btn.pause");
                     btnPrimary.Enabled = true;
                     break;
                 case DownloadState.Paused:
                 case DownloadState.Failed:
-                    btnPrimary.Text = state == DownloadState.Failed ? "↻ 重试" : "↻ 继续";
+                    btnPrimary.Text = state == DownloadState.Failed ? LanguageManager.Instance.T("row.btn.retry") : LanguageManager.Instance.T("row.btn.resume");
                     btnPrimary.Enabled = true;
                     break;
                 case DownloadState.Completed:
-                    btnPrimary.Text = "✓ 已完成";
+                    btnPrimary.Text = LanguageManager.Instance.T("row.btn.done");
                     btnPrimary.Enabled = false;
                     btnPrimary.ForeColor = _btnDisTxt;
                     break;
                 case DownloadState.Extracting:
-                    btnPrimary.Text = "解压中…";
+                    btnPrimary.Text = LanguageManager.Instance.T("row.btn.extracting");
                     btnPrimary.Enabled = false;
                     btnPrimary.ForeColor = _btnDisTxt;
                     break;

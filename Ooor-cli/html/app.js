@@ -28,6 +28,30 @@
     return String(s).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
   }
 
+  /** 估算字符串的终端显示宽度：CJK/全角/emoji 记 2，其它记 1（横幅边框对齐用） */
+  function dispW(s) {
+    var w = 0;
+    s = String(s == null ? '' : s);
+    for (var i = 0; i < s.length; i++) {
+      var c = s.codePointAt(i);
+      if (c > 0xFFFF) i++;
+      var wide = (c >= 0x2E80 && c <= 0x9FFF) || (c >= 0xAC00 && c <= 0xD7A3) ||
+                 (c >= 0xF900 && c <= 0xFAFF) || (c >= 0xFF01 && c <= 0xFF60) ||
+                 (c >= 0xFFE0 && c <= 0xFFE6) || c > 0xFFFF;
+      w += wide ? 2 : 1;
+    }
+    return w;
+  }
+
+  /** 工具图标：按工具名选 emoji，未收录的用 ⚙ 兜底 */
+  var TOOL_ICONS = {
+    write_file: '✍️', create_file: '✨', delete_file: '🗑️',
+    read_file: '📖', search_files: '🔍', list_directory: '📂', list_roots: '🗂️',
+    run_command: '⚡', execute_script: '📜',
+    web_search: '🌐', fetch_url: '🌍',
+    get_time: '🕐', get_environment: '🖥️', get_app_paths: '📁', get_app_info: 'ℹ️'
+  };
+
   /** 行内样式（输入已先转义）：行内代码 → 粗体 → 斜体（允许同层嵌套后再套外层） */
   function inline(s) {
     s = s.replace(/`([^`\n]+)`/g, '<span class="icode">$1</span>');
@@ -133,6 +157,9 @@
 
   var MAX_LINES = 2000;
 
+  // 斜杠菜单分页大小：每页最多 6 条命令，第 7 行固定显示页码 (当前页/总页数)
+  var MENU_PAGE_SIZE = 6;
+
   // ==================== Vue 终端 ====================
 
   new Vue({
@@ -192,21 +219,19 @@
         return n ? Math.min(this.menuIdx, n - 1) : 0;
       },
 
-      // —— 菜单分页：每页 6 条，第 7 行固定显示页码 ——
-      MENU_PAGE_SIZE: 6,
-
+      // —— 菜单分页：每页 6 条，第 7 行固定显示页码（MENU_PAGE_SIZE 为顶层常量）——
       menuPageTotal: function () {
-        return Math.max(1, Math.ceil(this.menuItems.length / this.MENU_PAGE_SIZE));
+        return Math.max(1, Math.ceil(this.menuItems.length / MENU_PAGE_SIZE));
       },
 
       /** 当前页号（由选中项位置推出，键盘移动跨页自动跟随） */
       menuPage: function () {
-        return Math.min(Math.floor(this.menuSel / this.MENU_PAGE_SIZE), this.menuPageTotal - 1);
+        return Math.min(Math.floor(this.menuSel / MENU_PAGE_SIZE), this.menuPageTotal - 1);
       },
 
       /** 当前页可见候选，附全局下标 gi（高亮与点击补全都用全局位置） */
       menuPageItems: function () {
-        var size = this.MENU_PAGE_SIZE;
+        var size = MENU_PAGE_SIZE;
         var start = this.menuPage * size;
         return this.menuItems.slice(start, start + size).map(function (c, k) {
           return { cmd: c.cmd, hint: c.hint, gi: start + k };
@@ -389,7 +414,9 @@
       /** 把一条原始行按终端语义定稿（代码围栏 / 思考灰行 / Markdown 行） */
       finalize: function (kind, raw) {
         if (kind === 'reasoning') {
-          this.line('reasoning', '<span class="rmark">  │ </span>' + esc(raw));
+          var first = this._lastKind !== 'reasoning';   // 思考段首行给 💭，续行只缩进
+          this._lastKind = 'reasoning';
+          this.line('reasoning', '<span class="rmark">' + (first ? '💭 ' : '   ') + '</span>' + esc(raw));
           return;
         }
         if (/^\s*```/.test(raw)) {
@@ -401,6 +428,7 @@
           this.line('fence', '<span class="fmark">▌</span>' + (raw ? ' ' + esc(raw) : ''));
           return;
         }
+        this._lastKind = 'assistant';
         this.line('assistant', this.renderLine(raw));
       },
 
@@ -432,7 +460,7 @@
           }
           if (!cur) cur = this.newLive(kind);
           cur.raw += seg;
-          cur.html = (kind === 'reasoning' ? '<span class="rmark">  │ </span>' : '') + esc(cur.raw);
+          cur.html = (kind === 'reasoning' ? '<span class="rmark">💭 </span>' : '') + esc(cur.raw);
         }
         this._cur = cur;
         this.pin();
@@ -560,7 +588,7 @@
         if (!d) return;
         var page = this.menuPage + (d > 0 ? 1 : -1);
         page = Math.max(0, Math.min(page, this.menuPageTotal - 1));
-        if (page !== this.menuPage) this.menuIdx = page * this.MENU_PAGE_SIZE;
+        if (page !== this.menuPage) this.menuIdx = page * MENU_PAGE_SIZE;
       },
 
       setInput: function (v) {
@@ -606,7 +634,7 @@
 
         switch (cmd) {
           case '/help':
-            this.line('banner', '命令一览：');
+            this.line('banner', '📖 命令一览：');
             COMMANDS.forEach(function (c) {
               self.line('sys', '  <span class="deco-cyan">' + esc(c.cmd) + '</span>' +
                 spaces(16 - c.cmd.length) + esc(c.hint));
@@ -659,7 +687,7 @@
 
       printRoots: function () {
         if (!this.roots.length) { this.line('sys', '白名单为空。'); return; }
-        this.line('banner', '沙盒白名单（' + this.roots.length + '）：');
+        this.line('banner', '📁 沙盒白名单（' + this.roots.length + '）：');
         var self = this;
         this.roots.forEach(function (r, i) {
           self.line('sys', '  [' + i + '] ' + esc(r));
@@ -794,7 +822,7 @@
             body.tool_choice = 'auto';
           }
 
-          self._spinner = { kind: 'content', raw: '', cls: 'spinner', html: '… 正在思考…', rendered: true };
+          self._spinner = { kind: 'content', raw: '', cls: 'spinner', html: '💭 思考中…', rendered: true };
           self.live.push(self._spinner);
 
           return self.streamChat(body).then(function (out) {
@@ -832,15 +860,16 @@
         var name = fn.name || '';
         var args = fn.arguments || '';
         var brief = args.length > 160 ? args.slice(0, 160) + '…' : args;
+        var icon = TOOL_ICONS[name] || '⚙';
         var head = this.line('toolhead',
-          '<span class="tname">⚙ ' + esc(name) + '</span> ' + esc(brief) + ' <span class="ok">…</span>');
+          '<span class="tname">' + icon + ' ' + esc(name) + '</span> ' + esc(brief) + ' <span class="ok">…</span>');
 
         return this.waitFor('toolResult:' + call.id,
                             { a: 'tool', id: call.id, name: name, args: args },
                             5 * 60 * 1000)
           .then(function (r) {
-            head.html = '<span class="tname">⚙ ' + esc(name) + '</span> ' + esc(brief) +
-              ' <span class="' + (r.ok ? 'ok' : 'fail') + '">' + (r.ok ? 'OK' : 'FAIL') + '</span>';
+            head.html = '<span class="tname">' + icon + ' ' + esc(name) + '</span> ' + esc(brief) +
+              ' <span class="' + (r.ok ? 'ok' : 'fail') + '">' + (r.ok ? '✅' : '❌') + '</span>';
             var txt = r.text || '';
             var shown = txt.length > 1500 ? txt.slice(0, 1500) + '\n…（已截断）' : txt;
             self.line('toolbody', esc(shown));
@@ -894,11 +923,11 @@
       printCreatedFiles: function () {
         if (!this.turnFiles.length) return;
         this.line('sys', '');
-        this.line('banner', '── 本次创建 / 修改的文件（点击用默认程序打开）──');
+        this.line('banner', '── 📄 本次创建 / 修改的文件（点击用默认程序打开）──');
         this.turnFiles.forEach(function (p) {
           var base = p.split(/[\\/]/).pop();
           this.line('filelist',
-            '  <a class="filelink" href="#" data-path="' + esc(p) + '" title="' + esc(p) + '">' + esc(base) + '</a>' +
+            '  <a class="filelink" href="#" data-path="' + esc(p) + '" title="' + esc(p) + '">📄 ' + esc(base) + '</a>' +
             '  <span class="fpath">' + esc(p) + '</span>');
         }, this);
       },
@@ -996,16 +1025,33 @@
         this._banner = true;
 
         this.lines = [];
-        this.line('banner', 'ooor 本地 AI 助手 · 控制台窗口' + (this.version ? '  v' + this.version : ''));
-        this.line('sys', '服务 ' + this.baseUrl + (this.modelId ? '   模型 ' + this.modelId : '') +
-          (this.running ? '   <span class="deco-cyan">[已连接]</span>' : '   <span style="color:#e74856">[未连接]</span>'));
-        if (this.toolNames) this.line('sys', '工具 ' + this.toolNames);
-        if (this.roots.length) {
-          this.line('sys', '白名单：');
-          var self = this;
-          this.roots.forEach(function (r) { self.line('sys', '  [' + r + ']'); });
+        // 横幅：box 边框 + 键值对齐（键青色、值正文色，宽度按终端显示宽度估算）
+        var title = '🤖 ooor AI 助手 · 控制台窗口';
+        var ver = this.version ? '  v' + this.version : '';
+        var w = dispW(title) + dispW(ver) + 2;              // 两侧各留 1 空格
+        var bar = '';
+        for (var i = 0; i < w; i++) bar += '─';
+        this.line('banner', '<span class="deco-cyan">╭' + bar + '╮</span>');
+        this.line('banner', '<span class="deco-cyan">│</span> <b>' + esc(title) + '</b>' +
+          (ver ? '<span class="c-dim">' + esc(ver) + '</span>' : '') +
+          ' <span class="deco-cyan">│</span>');
+        this.line('banner', '<span class="deco-cyan">╰' + bar + '╯</span>');
+
+        var self = this;
+        function row(key, html) {
+          var k = key;
+          while (dispW(k) < 7) k += ' ';                    // 键名按显示宽度对齐到同一列
+          self.line('sys', ' <span class="deco-cyan">' + esc(k) + '</span>' + html);
         }
-        this.line('sys', '直接输入文字与模型对话；输入 /help 查看命令，Esc / Ctrl+C 中断生成，连按两次 Ctrl+C 退出。');
+        row('服务', esc(this.baseUrl) + '  ' +
+          (this.running ? '<span class="c-gr">● 已连接</span>' : '<span class="c-rd">● 未连接</span>'));
+        if (this.modelId) row('模型', esc(this.modelId));
+        if (this.toolNames) row('工具', '<span class="c-dim">' + esc(this.toolNames) + '</span>');
+        if (this.roots.length) {
+          row('白名单', '<span class="c-dim">' + esc(this.roots.join('   ')) + '</span>');
+        }
+        this.line('sys', '');
+        this.line('sys', '<span class="c-dim">💡 直接输入文字与模型对话；输入 /help 查看命令，Esc / Ctrl+C 中断生成，连按两次 Ctrl+C 退出。</span>');
         this.line('sys', '');
       }
     }

@@ -542,5 +542,19 @@ namespace Ooor_cli
             if (s == "false" || s == "0") return false;
             return dflt;
         }
+
+        private void InitializeComponent()
+        {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(WebConsoleForm));
+            this.SuspendLayout();
+            // 
+            // WebConsoleForm
+            // 
+            this.ClientSize = new System.Drawing.Size(278, 244);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Name = "WebConsoleForm";
+            this.ResumeLayout(false);
+
+        }
     }
 }

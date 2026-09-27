@@ -302,20 +302,20 @@ namespace ooor
                 lblStatus.Text = L.T("mdl.status.sourceMirror");
         }
 
-        private void btnOoorSettings_Click(object sender, EventArgs e)
-        {
-            using (var dlg = new OoorSettingsForm())
-            {
-                if (dlg.ShowDialog(this) == DialogResult.OK)
-                {
-                    // 重新读取设置（OoorSettingsForm 已保存）
-                    var fresh = OoorSettings.Load();
-                    _ooor.ServerUrl = fresh.ServerUrl;
-                    _ooor.Token = fresh.Token;
-                    UpdateSourceHint();
-                }
-            }
-        }
+        //private void btnOoorSettings_Click(object sender, EventArgs e)
+        //{
+        //    using (var dlg = new OoorSettingsForm())
+        //    {
+        //        if (dlg.ShowDialog(this) == DialogResult.OK)
+        //        {
+        //            // 重新读取设置（OoorSettingsForm 已保存）
+        //            var fresh = OoorSettings.Load();
+        //            _ooor.ServerUrl = fresh.ServerUrl;
+        //            _ooor.Token = fresh.Token;
+        //            UpdateSourceHint();
+        //        }
+        //    }
+        //}
 
         // ==================== 搜索 ====================
 
