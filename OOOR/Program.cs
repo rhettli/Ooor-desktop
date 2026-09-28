@@ -50,6 +50,10 @@ namespace ooor
 
             var main = new MainForm { AutoStartMode = autoStart };
             main.Icon = DEF.Icon;   // 主窗口与任务栏显示 ooor 图标
+
+            // 启动心跳：后台计算设备指纹并匿名上报一次（内部全异常吞掉，不阻塞 UI 与启动）
+            ClientHeartbeat.StartOnce();
+
             Application.Run(main);
         }
 
@@ -110,6 +114,7 @@ namespace ooor
         public static IntPtr ShowMainForm()
         {
             AgentHost.SyncCoreEnv();   // 插件加载路径同样初始化 OoorFunc.Core 的宿主上下文
+            ClientHeartbeat.StartOnce();   // 插件宿主下同样上报一次启动心跳（内部防重）
             if (_mainForm == null || _mainForm.IsDisposed)
             {
                 _mainForm = new MainForm();

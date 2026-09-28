@@ -74,6 +74,7 @@
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml" />
     <!-- WebView2：AI 助手窗口用 html 页面做界面（与 MuaaaExt/Json 项目同一套包） -->
@@ -145,6 +146,7 @@
     <Compile Include="Core\AgentHost.cs" />
     <Compile Include="Core\AgentStore.cs" />
     <Compile Include="Core\BuiltinToolCatalog.cs" />
+    <Compile Include="Core\ClientHeartbeat.cs" />
     <Compile Include="Core\DEF.cs" />
     <Compile Include="Core\DownloadManager.cs" />
     <Compile Include="Core\GithubProxy.cs" />
