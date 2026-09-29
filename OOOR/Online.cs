@@ -205,6 +205,7 @@ namespace ooor
             }
             pnlList.ResumeLayout(false);
             ReflowRowWidths();
+            pnlList.PerformLayout();
         }
 
         private void ClearRows()

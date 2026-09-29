@@ -774,7 +774,7 @@
   "online.summary": "{0} device(s) online (showing {1}/{2}, as of {3})",
   "online.empty": "No devices online",
 
-  "menu.user": "&User",
+  "menu.user": "User(&U)",
   "menu.userOnline": "Online List",
   "menu.updateLog": "Update Log",
 

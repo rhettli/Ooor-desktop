@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.Net.Http;
 using System.Threading;
@@ -198,6 +199,7 @@ namespace ooor
             }
             pnlList.ResumeLayout(false);
             ReflowRowWidths();
+            pnlList.PerformLayout();
         }
 
         private void ClearRows()
