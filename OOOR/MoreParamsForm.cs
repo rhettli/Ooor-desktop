@@ -47,6 +47,15 @@ namespace ooor
             get { return listParams.SelectedItems.Count == 0 ? null : listParams.SelectedItems[0].Tag as ServerParam; }
         }
 
+        /// <summary>获取参数描述（内置参数走语言表；自定义参数用原始 Desc）</summary>
+        private static string ParamDesc(ServerParam p)
+        {
+            if (p.IsCustom) return p.Desc;
+            string key = "param.desc." + p.Name;
+            string t = L.T(key);
+            return t == key ? p.Desc : t;
+        }
+
         /// <summary>右键命中行时先选中该行，保证菜单作用于可见的选中行</summary>
         private void ListParams_MouseUp(object sender, MouseEventArgs e)
         {
@@ -354,7 +363,7 @@ namespace ooor
                     {
                         UseItemStyleForSubItems = true,
                         Tag = p,
-                        ToolTipText = p.Desc
+                        ToolTipText = ParamDesc(p)
                     };
 
                     if (!set)
@@ -367,7 +376,7 @@ namespace ooor
                     }
 
                     item.SubItems.Add(set ? value : L.T("mpf.notSet"));
-                    item.SubItems.Add(p.Desc);
+                    item.SubItems.Add(ParamDesc(p));
                     listParams.Items.Add(item);
                 }
 
@@ -441,7 +450,7 @@ namespace ooor
                 };
                 var lblDesc = new Label
                 {
-                    Text = p.Desc,
+                    Text = ParamDesc(p),
                     AutoSize = false,
                     Size = new Size(436, 40),
                     ForeColor = Color.Gray,

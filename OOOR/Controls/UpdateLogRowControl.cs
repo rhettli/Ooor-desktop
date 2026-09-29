@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using ooor.Core;
 
 namespace ooor.Controls
 {
@@ -13,6 +14,8 @@ namespace ooor.Controls
     /// </summary>
     public class UpdateLogRowControl : UserControl
     {
+        private static LanguageManager L => LanguageManager.Instance;
+
         public const int RowHeight = 90;
 
         private static readonly Color BgDefault = Color.White;
@@ -71,8 +74,8 @@ namespace ooor.Controls
             SuspendLayout();
 
             string header = $"v{version}  {channel}";
-            if (force) header += "  [强制更新]";
-            if (fileDeleted) header += "  [已归档]";
+            if (force) header += "  [" + L.T("ulog.force") + "]";
+            if (fileDeleted) header += "  [" + L.T("ulog.archived") + "]";
             if (!string.IsNullOrEmpty(publishedAt)) header += $"    {publishedAt}";
             lblHeader.Text = header;
 
@@ -137,6 +140,18 @@ namespace ooor.Controls
             base.OnPaint(e);
             using (var p = new Pen(BorderClr))
                 e.Graphics.DrawLine(p, 0, Height - 1, Width, Height - 1);
+        }
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            // 
+            // UpdateLogRowControl
+            // 
+            this.BackColor = System.Drawing.SystemColors.Control;
+            this.Name = "UpdateLogRowControl";
+            this.ResumeLayout(false);
+
         }
     }
 }

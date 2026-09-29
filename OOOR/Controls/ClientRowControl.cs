@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using ooor.Core;
 
 namespace ooor.Controls
 {
@@ -13,6 +14,8 @@ namespace ooor.Controls
     /// </summary>
     public class ClientRowControl : UserControl
     {
+        private static LanguageManager L => LanguageManager.Instance;
+
         public const int RowHeight = 78;
 
         private static readonly Color BgDefault = Color.White;
@@ -73,8 +76,8 @@ namespace ooor.Controls
             BackColor = _hovered ? BgHover : BgDefault;
 
             lblTitle.Text = $"#{index}  {hostname}";
-            lblSpec.Text = $"{cpu}   {cores} 核   {MemToGb(memMb):F1} GB   版本 {ver}";
-            lblMeta.Text = $"IP：{ip}    最后在线 {Ago(serverTime - lastAt)}    UUID {ShortUuid(uuid)}";
+            lblSpec.Text = $"{cpu}   {cores} {L.T("online.cores")}   {MemToGb(memMb):F1} GB   {L.T("online.version")} {ver}";
+            lblMeta.Text = $"{L.T("online.ip")}{MaskIp(ip)}    {L.T("online.lastOnline")} {Ago(serverTime - lastAt)}    UUID {ShortUuid(uuid)}";
 
             ReflowWidth();
             ResumeLayout(false);
@@ -149,13 +152,24 @@ namespace ooor.Controls
         private static string Ago(long seconds)
         {
             if (seconds < 0) seconds = 0;
-            if (seconds < 60) return seconds + " 秒";
-            if (seconds < 3600) return (seconds / 60) + " 分钟";
-            if (seconds < 86400) return (seconds / 3600) + " 小时";
-            return (seconds / 86400) + " 天";
+            if (seconds < 60) return seconds + " " + L.T("online.ago.sec");
+            if (seconds < 3600) return (seconds / 60) + " " + L.T("online.ago.min");
+            if (seconds < 86400) return (seconds / 3600) + " " + L.T("online.ago.hour");
+            return (seconds / 86400) + " " + L.T("online.ago.day");
         }
 
         private static string ShortUuid(string uuid) =>
             string.IsNullOrEmpty(uuid) ? "" : uuid.Substring(0, Math.Min(12, uuid.Length)) + "…";
+
+        /// <summary>IP 最后一段用 * 替代：IPv4 111.21.197.170 → 111.21.197.*；IPv6 …:7b9f:f1e9 → …:7b9f:*</summary>
+        private static string MaskIp(string ip)
+        {
+            if (string.IsNullOrEmpty(ip)) return "";
+            int dot = ip.LastIndexOf('.');
+            if (dot >= 0) return ip.Substring(0, dot + 1) + "*";       // IPv4
+            int colon = ip.LastIndexOf(':');
+            if (colon >= 0) return ip.Substring(0, colon + 1) + "*";   // IPv6
+            return ip;
+        }
     }
 }

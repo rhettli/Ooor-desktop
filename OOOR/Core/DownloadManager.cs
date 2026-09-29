@@ -1491,6 +1491,7 @@ namespace ooor.Core
             public int State;
             public int Threads;
             public long CreateTimeTicks;
+            public bool IsInstaller;
 
             public static TaskRecord From(DownloadTask t)
             {
@@ -1509,7 +1510,8 @@ namespace ooor.Core
                     TotalBytes = t.TotalBytes,
                     State = (int)t.State,
                     Threads = t.Threads,
-                    CreateTimeTicks = t.CreateTime.Ticks
+                    CreateTimeTicks = t.CreateTime.Ticks,
+                    IsInstaller = t.IsInstaller
                 };
             }
 
@@ -1532,7 +1534,9 @@ namespace ooor.Core
                     // 历史记录无 Threads 字段时按当前全局默认兜底
                     Threads = Threads > 0 ? Threads : DownloadManager.LastThreadCount,
                     Message = Message,
-                    CreateTime = CreateTimeTicks > 0 ? new DateTime(CreateTimeTicks, DateTimeKind.Local) : DateTime.Now
+                    CreateTime = CreateTimeTicks > 0 ? new DateTime(CreateTimeTicks, DateTimeKind.Local) : DateTime.Now,
+                    // 兼容旧记录：IsInstaller 字段不存在时按 Tag=installer 兜底
+                    IsInstaller = IsInstaller || Tag == "installer"
                 };
             }
         }

@@ -284,6 +284,9 @@
     <EmbeddedResource Include="ConsoleChatRecord.resx">
       <DependentUpon>ConsoleChatRecord.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\UpdateLogRowControl.resx">
+      <DependentUpon>UpdateLogRowControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FileDownloadBefore.resx">
       <DependentUpon>FileDownloadBefore.cs</DependentUpon>
     </EmbeddedResource>

@@ -255,6 +255,9 @@ namespace ooor
                 url = OoorUpdate.CurrentServerUrl().TrimEnd('/') + "/api/v1/releases/"
                       + Uri.EscapeDataString(_release.Version.Trim()) + "/download";
 
+            // 打开下载管理窗口让用户看到进度
+            FileDownloadForm.ShowManager(this);
+
             // 入队（已存在同 URL 未完成任务时 Enqueue 返回旧任务）
             var task = DownloadManager.Instance.Enqueue(
                 tag: "installer",
@@ -271,11 +274,7 @@ namespace ooor
             {
                 MainForm.PromptInstallAndExit(task.SavePath);
             }
-            else
-            {
-                // 打开下载管理窗口让用户看到进度
-                FileDownloadForm.ShowManager(this);
-            }
+          
 
             Close();   // 关闭关于窗口
         }
