@@ -106,13 +106,14 @@ namespace ooor
             this.方案ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.保存方案ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.管理方案ToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.ToolStripMenuItemUser = new System.Windows.Forms.ToolStripMenuItem();
+            this.ToolStripMenuItemUserOnline = new System.Windows.Forms.ToolStripMenuItem();
             this.帮助ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.下载管理ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
             this.ToolStripMenuItemSetting = new System.Windows.Forms.ToolStripMenuItem();
             this.关于ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ToolStripMenuItemUser = new System.Windows.Forms.ToolStripMenuItem();
-            this.ToolStripMenuItemUserOnline = new System.Windows.Forms.ToolStripMenuItem();
+            this.ToolStripMenuItemUpdateLog = new System.Windows.Forms.ToolStripMenuItem();
             this.panelTop.SuspendLayout();
             this.statusStrip.SuspendLayout();
             this.toolStrip1.SuspendLayout();
@@ -822,12 +823,28 @@ namespace ooor
             this.管理方案ToolStripMenuItem1.Text = "管理方案";
             this.管理方案ToolStripMenuItem1.Click += new System.EventHandler(this.toolStripButtonManageProfiles_Click);
             // 
+            // ToolStripMenuItemUser
+            // 
+            this.ToolStripMenuItemUser.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.ToolStripMenuItemUserOnline});
+            this.ToolStripMenuItemUser.Name = "ToolStripMenuItemUser";
+            this.ToolStripMenuItemUser.Size = new System.Drawing.Size(87, 28);
+            this.ToolStripMenuItemUser.Text = "用户(&U)";
+            // 
+            // ToolStripMenuItemUserOnline
+            // 
+            this.ToolStripMenuItemUserOnline.Name = "ToolStripMenuItemUserOnline";
+            this.ToolStripMenuItemUserOnline.Size = new System.Drawing.Size(182, 34);
+            this.ToolStripMenuItemUserOnline.Text = "在线列表";
+            this.ToolStripMenuItemUserOnline.Click += new System.EventHandler(this.ToolStripMenuItemUserOnline_Click);
+            // 
             // 帮助ToolStripMenuItem
             // 
             this.帮助ToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.下载管理ToolStripMenuItem,
             this.toolStripSeparator8,
             this.ToolStripMenuItemSetting,
+            this.ToolStripMenuItemUpdateLog,
             this.关于ToolStripMenuItem});
             this.帮助ToolStripMenuItem.Name = "帮助ToolStripMenuItem";
             this.帮助ToolStripMenuItem.Size = new System.Drawing.Size(88, 28);
@@ -863,20 +880,12 @@ namespace ooor
             this.关于ToolStripMenuItem.Text = "关于";
             this.关于ToolStripMenuItem.Click += new System.EventHandler(this.toolStripButtonAbout_Click);
             // 
-            // ToolStripMenuItemUser
+            // ToolStripMenuItemUpdateLog
             // 
-            this.ToolStripMenuItemUser.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.ToolStripMenuItemUserOnline});
-            this.ToolStripMenuItemUser.Name = "ToolStripMenuItemUser";
-            this.ToolStripMenuItemUser.Size = new System.Drawing.Size(87, 28);
-            this.ToolStripMenuItemUser.Text = "用户(&U)";
-            // 
-            // ToolStripMenuItemUserOnline
-            // 
-            this.ToolStripMenuItemUserOnline.Name = "ToolStripMenuItemUserOnline";
-            this.ToolStripMenuItemUserOnline.Size = new System.Drawing.Size(270, 34);
-            this.ToolStripMenuItemUserOnline.Text = "在线列表";
-            this.ToolStripMenuItemUserOnline.Click += new System.EventHandler(this.ToolStripMenuItemUserOnline_Click);
+            this.ToolStripMenuItemUpdateLog.Name = "ToolStripMenuItemUpdateLog";
+            this.ToolStripMenuItemUpdateLog.Size = new System.Drawing.Size(306, 34);
+            this.ToolStripMenuItemUpdateLog.Text = "更新日志";
+            this.ToolStripMenuItemUpdateLog.Click += new System.EventHandler(this.ToolStripMenuItemUpdateLog_Click);
             // 
             // MainForm
             // 
@@ -988,5 +997,6 @@ namespace ooor
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemUser;
         private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemUserOnline;
+        private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemUpdateLog;
     }
 }

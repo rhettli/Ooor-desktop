@@ -1796,5 +1796,10 @@ namespace ooor
         {
             new Online().Show(this);
         }
+
+        private void ToolStripMenuItemUpdateLog_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

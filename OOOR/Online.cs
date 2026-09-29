@@ -93,8 +93,6 @@ namespace ooor
             using (var req = new HttpClient { Timeout = TimeSpan.FromSeconds(8) })
             {
                 req.DefaultRequestHeaders.Add("Ooor", DEF.ver);
-                if (!string.IsNullOrEmpty(set.Token))
-                    req.DefaultRequestHeaders.Add("X-Release-Token", set.Token);
 
                 ct.ThrowIfCancellationRequested();
                 string json = await req.GetStringAsync(url);
@@ -120,11 +118,12 @@ namespace ooor
             };
 
             var clients = new List<OnlineClient>();
-            if (d.TryGetValue("clients", out var cObj) && cObj is object[] arr)
+            // JavaScriptSerializer 对 JSON 数组可能返回 object[] 或 ArrayList，统一用 IEnumerable 遍历
+            if (d.TryGetValue("clients", out var cObj) && cObj is System.Collections.IEnumerable arr)
             {
                 foreach (var item in arr)
                 {
-                    var cd = item as Dictionary<string, object>;
+                    var cd = ToDict(item);
                     if (cd == null) continue;
                     clients.Add(new OnlineClient
                     {
@@ -141,6 +140,20 @@ namespace ooor
             }
             result.Clients = clients;
             return result;
+        }
+
+        /// <summary>把 JSON 对象统一转成 IDictionary&lt;string,object&gt;（兼容 Dictionary 和 Hashtable）</summary>
+        private static IDictionary<string, object> ToDict(object o)
+        {
+            if (o is IDictionary<string, object> d) return d;
+            if (o is System.Collections.IDictionary idict)
+            {
+                var dict = new Dictionary<string, object>();
+                foreach (System.Collections.DictionaryEntry de in idict)
+                    dict[de.Key.ToString()] = de.Value;
+                return dict;
+            }
+            return null;
         }
 
         private static string GetStr(IDictionary<string, object> d, string key)
@@ -187,7 +200,7 @@ namespace ooor
                     Width = pnlList.ClientSize.Width,
                 };
                 row.Bind(i + 1, c.Hostname, c.Cpu, c.Cores, c.MemMb,
-                    c.Ver, c.UpdatedIp, c.LastAt, result.ServerTime, c.Uuid, i % 2 == 1);
+                    c.Ver, c.UpdatedIp, c.LastAt, result.ServerTime, c.Uuid);
                 pnlList.Controls.Add(row);
             }
             pnlList.ResumeLayout(false);

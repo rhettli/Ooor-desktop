@@ -15,11 +15,13 @@ namespace ooor.Controls
     {
         public const int RowHeight = 78;
 
-        private static readonly Color BgOdd = Color.White;
-        private static readonly Color BgEven = Color.FromArgb(248, 249, 250);
+        private static readonly Color BgDefault = Color.White;
+        private static readonly Color BgHover = Color.FromArgb(245, 248, 252);
         private static readonly Color BorderClr = Color.FromArgb(0xE8, 0xE8, 0xE8);
         private static readonly Color TitleClr = Color.FromArgb(0x1a, 0x1a, 0x1a);
         private static readonly Color SpecClr = Color.FromArgb(0x44, 0x44, 0x44);
+
+        private bool _hovered;
 
         private readonly Label lblTitle;   // #1  hostname
         private readonly Label lblSpec;    // CPU  cores  mem  ver
@@ -27,16 +29,22 @@ namespace ooor.Controls
 
         public ClientRowControl()
         {
-            // 双缓冲，防闪烁
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+            // 双缓冲 + 自绘背景，防闪烁（与 RowControl 一致）
+            SetStyle(ControlStyles.OptimizedDoubleBuffer
+                   | ControlStyles.AllPaintingInWmPaint
+                   | ControlStyles.UserPaint
+                   | ControlStyles.ResizeRedraw, true);
             Height = RowHeight;
+            Margin = new Padding(0);
+            Padding = new Padding(0);
+            BorderStyle = BorderStyle.None;
             Font = new Font("Segoe UI", 9F);
 
             lblTitle = MakeLabel(16, 6, FontStyle.Bold, TitleClr);
             lblSpec = MakeLabel(16, 28, FontStyle.Regular, SpecClr);
             lblMeta = MakeLabel(16, 50, FontStyle.Regular, Color.Gray);
 
-            BackColor = BgOdd;
+            BackColor = BgDefault;
         }
 
         private Label MakeLabel(int x, int y, FontStyle style, Color fore)
@@ -44,6 +52,7 @@ namespace ooor.Controls
             var lbl = new Label
             {
                 Location = new Point(x, y),
+                Size = new Size(760, 22),
                 AutoSize = false,
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                 Font = new Font(Font.FontFamily, Font.Size, style),
@@ -58,10 +67,10 @@ namespace ooor.Controls
         /// <summary>填充一行数据</summary>
         public void Bind(int index, string hostname, string cpu, int cores,
             long memMb, string ver, string ip, long lastAt, long serverTime,
-            string uuid, bool even)
+            string uuid)
         {
             SuspendLayout();
-            BackColor = even ? BgEven : BgOdd;
+            BackColor = _hovered ? BgHover : BgDefault;
 
             lblTitle.Text = $"#{index}  {hostname}";
             lblSpec.Text = $"{cpu}   {cores} 核   {MemToGb(memMb):F1} GB   版本 {ver}";
@@ -74,6 +83,7 @@ namespace ooor.Controls
         /// <summary>跟随父容器宽度调整各 Label 宽度</summary>
         public void ReflowWidth()
         {
+            if (lblTitle == null || lblSpec == null || lblMeta == null) return;
             int w = Math.Max(100, (Parent?.ClientSize.Width ?? 780) - 24);
             if (lblTitle.Width != w) { lblTitle.Width = w; lblSpec.Width = w; lblMeta.Width = w; }
         }
@@ -84,9 +94,49 @@ namespace ooor.Controls
             ReflowWidth();
         }
 
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            base.OnMouseEnter(e);
+            _hovered = true;
+            BackColor = BgHover;
+            Invalidate();
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            _hovered = false;
+            BackColor = BgDefault;
+            Invalidate();
+        }
+
+        // 子控件转发 MouseEnter/Leave 让行控件自身也感知（让空白处 hover 时整行变色）
+        // 与 RowControl 同一模式：MouseLeave 时检查鼠标是否真的离开整行
+        protected override void OnControlAdded(ControlEventArgs e)
+        {
+            base.OnControlAdded(e);
+            WireChildHover(e.Control);
+        }
+
+        private void WireChildHover(Control c)
+        {
+            c.MouseEnter += (s, _) => OnMouseEnter(EventArgs.Empty);
+            c.MouseLeave += (s, _) =>
+            {
+                if (!ClientRectangle.Contains(PointToClient(Cursor.Position)))
+                    OnMouseLeave(EventArgs.Empty);
+            };
+            foreach (Control child in c.Controls) WireChildHover(child);
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
+            // UserPaint 模式需显式填充背景色
+            using (var b = new SolidBrush(BackColor))
+                e.Graphics.FillRectangle(b, ClientRectangle);
+
             base.OnPaint(e);
+
             // 底部分隔线
             using (var p = new Pen(BorderClr))
                 e.Graphics.DrawLine(p, 0, Height - 1, Width, Height - 1);
