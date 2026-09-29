@@ -361,6 +361,9 @@ namespace ooor
             下载管理ToolStripMenuItem.Text = L.T("more.downloadMgr");
             ToolStripMenuItemSetting.Text = L.T("more.settings");
             关于ToolStripMenuItem.Text = L.T("more.about");
+            ToolStripMenuItemUser.Text = L.T("menu.user");
+            ToolStripMenuItemUserOnline.Text = L.T("menu.userOnline");
+            ToolStripMenuItemUpdateLog.Text = L.T("menu.updateLog");
 
             // 顶部参数区标签
             lblDir.Text = L.T("lbl.dir");
@@ -1799,7 +1802,7 @@ namespace ooor
 
         private void ToolStripMenuItemUpdateLog_Click(object sender, EventArgs e)
         {
-
+            new UpdateLogForm().Show(this);
         }
     }
 }

@@ -129,6 +129,12 @@
     <Compile Include="Online.Designer.cs">
       <DependentUpon>Online.cs</DependentUpon>
     </Compile>
+    <Compile Include="UpdateLogForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UpdateLogForm.Designer.cs">
+      <DependentUpon>UpdateLogForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -146,6 +152,9 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Controls\ClientRowControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\UpdateLogRowControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Controls\IconReader.cs" />
@@ -307,6 +316,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Online.resx">
       <DependentUpon>Online.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UpdateLogForm.resx">
+      <DependentUpon>UpdateLogForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ProfileManagerForm.resx">
       <DependentUpon>ProfileManagerForm.cs</DependentUpon>

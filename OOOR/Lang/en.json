@@ -772,5 +772,16 @@
   "online.loading": "Loading…",
   "online.error": "Load failed: {0}",
   "online.summary": "{0} device(s) online (showing {1}/{2}, as of {3})",
-  "online.empty": "No devices online"
+  "online.empty": "No devices online",
+
+  "menu.user": "&User",
+  "menu.userOnline": "Online List",
+  "menu.updateLog": "Update Log",
+
+  "ulog.title": "Update Log",
+  "ulog.refresh": "Refresh",
+  "ulog.loading": "Loading…",
+  "ulog.error": "Load failed: {0}",
+  "ulog.summary": "{0} version(s) total (showing {1})",
+  "ulog.empty": "No update logs"
 }

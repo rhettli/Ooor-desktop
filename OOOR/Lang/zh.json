@@ -772,5 +772,16 @@
   "online.loading": "正在加载…",
   "online.error": "加载失败：{0}",
   "online.summary": "当前在线：{0} 人（显示 {1}/{2}，截至 {3}）",
-  "online.empty": "当前无在线设备"
+  "online.empty": "当前无在线设备",
+
+  "menu.user": "用户(&U)",
+  "menu.userOnline": "在线列表",
+  "menu.updateLog": "更新日志",
+
+  "ulog.title": "更新日志",
+  "ulog.refresh": "刷新",
+  "ulog.loading": "正在加载…",
+  "ulog.error": "加载失败：{0}",
+  "ulog.summary": "共 {0} 个版本（显示 {1} 个）",
+  "ulog.empty": "暂无更新日志"
 }
