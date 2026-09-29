@@ -765,5 +765,12 @@
   "updater.title": "安装更新",
   "updater.missing": "安装包不存在：{0}",
   "updater.installPrompt": "Ooor 安装包下载完成，是否立即安装？",
-  "updater.launchFail": "启动安装程序失败：{0}"
+  "updater.launchFail": "启动安装程序失败：{0}",
+
+  "online.title": "在线设备",
+  "online.refresh": "刷新",
+  "online.loading": "正在加载…",
+  "online.error": "加载失败：{0}",
+  "online.summary": "当前在线：{0} 人（显示 {1}/{2}，截至 {3}）",
+  "online.empty": "当前无在线设备"
 }

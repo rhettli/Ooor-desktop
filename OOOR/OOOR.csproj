@@ -123,6 +123,12 @@
     <Compile Include="llamaVersionForm.Designer.cs">
       <DependentUpon>llamaVersionForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Online.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Online.Designer.cs">
+      <DependentUpon>Online.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -137,6 +143,9 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Controls\ChatRecordRowControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ClientRowControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Controls\IconReader.cs" />
@@ -295,6 +304,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="MoreParamsForm.resx">
       <DependentUpon>MoreParamsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Online.resx">
+      <DependentUpon>Online.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ProfileManagerForm.resx">
       <DependentUpon>ProfileManagerForm.cs</DependentUpon>

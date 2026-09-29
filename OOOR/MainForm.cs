@@ -1792,6 +1792,9 @@ namespace ooor
             new LlamaDownloadForm().Show(this);
         }
 
-     
+        private void ToolStripMenuItemUserOnline_Click(object sender, EventArgs e)
+        {
+            new Online().Show(this);
+        }
     }
 }

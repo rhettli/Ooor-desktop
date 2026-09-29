@@ -765,5 +765,12 @@
   "updater.title": "Install Update",
   "updater.missing": "Installer not found: {0}",
   "updater.installPrompt": "Ooor installer download complete. Install now?",
-  "updater.launchFail": "Failed to launch installer: {0}"
+  "updater.launchFail": "Failed to launch installer: {0}",
+
+  "online.title": "Online Devices",
+  "online.refresh": "Refresh",
+  "online.loading": "Loading…",
+  "online.error": "Load failed: {0}",
+  "online.summary": "{0} device(s) online (showing {1}/{2}, as of {3})",
+  "online.empty": "No devices online"
 }
