@@ -121,6 +121,7 @@
   "settings.language": "Language:",
 
   "common.save": "Save",
+  "common.ok": "OK",
   "common.cancel": "Cancel",
   "common.notice": "Notice",
   "common.error": "Error",
@@ -681,6 +682,8 @@
   "lvp.col.inUse": "In Use",
   "lvp.btn.ok": "OK",
   "lvp.btn.cancel": "Cancel",
+  "lvp.menu.select": "Select (double-click to select)",
+  "lvp.menu.manageAll": "Manage all versions",
   "lvp.state.disabled": "Disabled",
   "lvp.state.enabled": "Enabled",
   "lvp.state.inUse": "In use",

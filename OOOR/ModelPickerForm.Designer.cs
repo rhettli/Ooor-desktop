@@ -45,6 +45,7 @@ namespace ooor
             this.listModels.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listModels.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.listModels.FullRowSelect = true;
+            this.listModels.GridLines = true;
             this.listModels.HideSelection = false;
             this.listModels.Location = new System.Drawing.Point(0, 0);
             this.listModels.MultiSelect = false;

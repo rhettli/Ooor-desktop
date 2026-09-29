@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using ooor.Core;
 
 namespace ooor
 {
@@ -9,6 +10,7 @@ namespace ooor
     {
         public static bool Show(IWin32Window owner, string title, string label, ref string text)
         {
+            var L = LanguageManager.Instance;
             using (var f = new Form())
             {
                 f.Text = title ?? "";
@@ -32,8 +34,8 @@ namespace ooor
                     Location = new Point(12, 46),
                     Size = new Size(396, 27)
                 };
-                var ok = new Button { Text = "确定", DialogResult = DialogResult.OK, Size = new Size(88, 30) };
-                var cancel = new Button { Text = "取消", DialogResult = DialogResult.Cancel, Size = new Size(88, 30) };
+                var ok = new Button { Text = L.T("common.ok"), DialogResult = DialogResult.OK, Size = new Size(88, 30) };
+                var cancel = new Button { Text = L.T("common.cancel"), DialogResult = DialogResult.Cancel, Size = new Size(88, 30) };
                 ok.Location = new Point(396 - 88 - 12 - 88, 98);
                 cancel.Location = new Point(396 - 88, 98);
 

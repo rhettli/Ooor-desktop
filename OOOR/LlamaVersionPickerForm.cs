@@ -59,7 +59,7 @@ namespace ooor
 
                     item.SubItems.Add(full);
                     item.SubItems.Add(disabled ? L.T("lvp.state.disabled") : L.T("lvp.state.enabled"));
-                    item.SubItems.Add(IsCurrent(v, current) ? L.T("lvp.state.inUse") : "");
+                    item.SubItems.Add(IsCurrent(v, current) ? "✔️" : "");
                     item.Tag = v;
                     listVersions.Items.Add(item);
                 }
@@ -107,7 +107,7 @@ namespace ooor
                    string.Equals(v.Name, current.Name, StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>按当前语言刷新标题、列头、按钮及列表中的状态/使用中文本</summary>
+        /// <summary>按当前语言刷新标题、列头、右键菜单及列表中的状态/使用中文本</summary>
         protected override void ApplyLanguage()
         {
             Text = L.T("lvp.title");
@@ -115,8 +115,8 @@ namespace ooor
             colVersionDir.Text = L.T("lvp.col.dir");
             colVersionStatus.Text = L.T("lvp.col.status");
             colVersionState.Text = L.T("lvp.col.inUse");
-            btnOk.Text = L.T("lvp.btn.ok");
-            btnCancel.Text = L.T("lvp.btn.cancel");
+            miSelect.Text = L.T("lvp.menu.select");
+            miManageAll.Text = L.T("lvp.menu.manageAll");
 
             // 状态列 / 使用中列为动态内容，按行 Tag 就地重算
             foreach (ListViewItem it in listVersions.Items)
@@ -125,7 +125,7 @@ namespace ooor
                 if (v == null) continue;
                 bool disabled = LlamaRuntime.IsVersionDisabled(v.Name);
                 it.SubItems[2].Text = disabled ? L.T("lvp.state.disabled") : L.T("lvp.state.enabled");
-                it.SubItems[3].Text = IsCurrent(v, _current) ? L.T("lvp.state.inUse") : "";
+                it.SubItems[3].Text = IsCurrent(v, _current) ? "✔️" : "";
             }
         }
 
@@ -155,12 +155,28 @@ namespace ooor
             Close();
         }
 
-        /// <summary>底部「确定 / 取消」按钮保持右对齐（间距 12px）</summary>
-        private void LayoutButtons(object sender, EventArgs e)
+        /// <summary>右键「管理所有版本」：打开 llamaVersionForm 进行增删改</summary>
+        private void miManageAll_Click(object sender, EventArgs e)
         {
-            int y = (panelBottom.Height - btnOk.Height) / 2;
-            btnOk.Location = new Point(panelBottom.Width - btnOk.Width - btnCancel.Width - 24, y);
-            btnCancel.Location = new Point(panelBottom.Width - btnCancel.Width - 12, y);
+            using (var f = new llamaVersionForm())
+                f.ShowDialog(this);
+        }
+
+        /// <summary>Escape 关闭窗口（取消选择）；回车确认选择</summary>
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.Escape)
+            {
+                DialogResult = DialogResult.Cancel;
+                Close();
+                return true;
+            }
+            if (keyData == Keys.Enter)
+            {
+                ConfirmSelection(this, EventArgs.Empty);
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
     }
 }

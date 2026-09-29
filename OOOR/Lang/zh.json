@@ -121,6 +121,7 @@
   "settings.language": "语言：",
 
   "common.save": "保存",
+  "common.ok": "确定",
   "common.cancel": "取消",
   "common.notice": "提示",
   "common.error": "错误",
@@ -681,6 +682,8 @@
   "lvp.col.inUse": "使用中",
   "lvp.btn.ok": "确定",
   "lvp.btn.cancel": "取消",
+  "lvp.menu.select": "选择（双击选择）",
+  "lvp.menu.manageAll": "管理所有版本",
   "lvp.state.disabled": "禁用",
   "lvp.state.enabled": "启用",
   "lvp.state.inUse": "使用中",

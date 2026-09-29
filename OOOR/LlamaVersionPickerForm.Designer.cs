@@ -22,101 +22,91 @@ namespace ooor
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.listVersions = new System.Windows.Forms.ListView();
             this.colVersionName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.colVersionDir = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.colVersionStatus = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.colVersionState = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.panelBottom = new System.Windows.Forms.Panel();
-            this.btnOk = new System.Windows.Forms.Button();
-            this.btnCancel = new System.Windows.Forms.Button();
-            this.panelBottom.SuspendLayout();
+            this.contextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.miSelect = new System.Windows.Forms.ToolStripMenuItem();
+            this.miManageAll = new System.Windows.Forms.ToolStripMenuItem();
+            this.contextMenu.SuspendLayout();
             this.SuspendLayout();
-            // 
+            //
+            // contextMenu
+            //
+            this.contextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miSelect,
+            this.miManageAll});
+            this.contextMenu.Name = "contextMenu";
+            this.contextMenu.Size = new System.Drawing.Size(200, 48);
+            //
+            // miSelect
+            //
+            this.miSelect.Name = "miSelect";
+            this.miSelect.Size = new System.Drawing.Size(199, 22);
+            this.miSelect.Click += new System.EventHandler(this.ConfirmSelection);
+            //
+            // miManageAll
+            //
+            this.miManageAll.Name = "miManageAll";
+            this.miManageAll.Size = new System.Drawing.Size(199, 22);
+            this.miManageAll.Click += new System.EventHandler(this.miManageAll_Click);
+            //
             // listVersions
-            // 
-            this.listVersions.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.listVersions.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.listVersions.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colVersionName,
             this.colVersionDir,
             this.colVersionStatus,
             this.colVersionState});
+            this.listVersions.ContextMenuStrip = this.contextMenu;
             this.listVersions.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.listVersions.FullRowSelect = true;
+            this.listVersions.GridLines = true;
             this.listVersions.HideSelection = false;
             this.listVersions.Location = new System.Drawing.Point(0, 0);
             this.listVersions.MultiSelect = false;
             this.listVersions.Name = "listVersions";
             this.listVersions.ShowItemToolTips = true;
-            this.listVersions.Size = new System.Drawing.Size(960, 412);
+            this.listVersions.Size = new System.Drawing.Size(960, 486);
             this.listVersions.TabIndex = 0;
             this.listVersions.UseCompatibleStateImageBehavior = false;
             this.listVersions.View = System.Windows.Forms.View.Details;
             this.listVersions.ItemActivate += new System.EventHandler(this.ConfirmSelection);
-            // 
+            //
             // colVersionName
-            // 
+            //
             this.colVersionName.Text = "版本";
             this.colVersionName.Width = 260;
-            // 
+            //
             // colVersionDir
-            // 
+            //
             this.colVersionDir.Text = "安装目录";
             this.colVersionDir.Width = 200;
-            // 
+            //
             // colVersionStatus
-            // 
+            //
             this.colVersionStatus.Text = "状态";
             this.colVersionStatus.Width = 80;
-            // 
+            //
             // colVersionState
-            // 
+            //
             this.colVersionState.Text = "使用中";
             this.colVersionState.Width = 90;
-            // 
-            // panelBottom
-            // 
-            this.panelBottom.Controls.Add(this.btnOk);
-            this.panelBottom.Controls.Add(this.btnCancel);
-            this.panelBottom.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panelBottom.Location = new System.Drawing.Point(0, 418);
-            this.panelBottom.Name = "panelBottom";
-            this.panelBottom.Size = new System.Drawing.Size(960, 68);
-            this.panelBottom.TabIndex = 1;
-            this.panelBottom.Resize += new System.EventHandler(this.LayoutButtons);
-            // 
-            // btnOk
-            // 
-            this.btnOk.Location = new System.Drawing.Point(645, 14);
-            this.btnOk.Name = "btnOk";
-            this.btnOk.Size = new System.Drawing.Size(133, 42);
-            this.btnOk.TabIndex = 0;
-            this.btnOk.Text = "确定";
-            this.btnOk.UseVisualStyleBackColor = true;
-            this.btnOk.Click += new System.EventHandler(this.ConfirmSelection);
-            // 
-            // btnCancel
-            // 
-            this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(816, 14);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(133, 42);
-            this.btnCancel.TabIndex = 1;
-            this.btnCancel.Text = "取消";
-            this.btnCancel.UseVisualStyleBackColor = true;
-            // 
+            //
             // LlamaVersionPickerForm
-            // 
-            this.AcceptButton = this.btnOk;
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.CancelButton = this.btnCancel;
             this.ClientSize = new System.Drawing.Size(960, 486);
             this.Controls.Add(this.listVersions);
-            this.Controls.Add(this.panelBottom);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.KeyPreview = true;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(660, 360);
@@ -124,7 +114,7 @@ namespace ooor
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "选择 llama 版本";
-            this.panelBottom.ResumeLayout(false);
+            this.contextMenu.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -136,8 +126,8 @@ namespace ooor
         private System.Windows.Forms.ColumnHeader colVersionDir;
         private System.Windows.Forms.ColumnHeader colVersionStatus;
         private System.Windows.Forms.ColumnHeader colVersionState;
-        private System.Windows.Forms.Panel panelBottom;
-        private System.Windows.Forms.Button btnOk;
-        private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.ContextMenuStrip contextMenu;
+        private System.Windows.Forms.ToolStripMenuItem miSelect;
+        private System.Windows.Forms.ToolStripMenuItem miManageAll;
     }
 }
