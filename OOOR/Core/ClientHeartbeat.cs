@@ -29,6 +29,7 @@ namespace ooor.Core
         /// <summary>启动上报成功后，在线轻量心跳间隔（只刷 last_at，不带数据）。</summary>
         private static readonly TimeSpan PingInterval = TimeSpan.FromHours(2);
 
+        // 尊重系统代理设置：用户配了代理（如 Clash）就按代理走，不做绕行
         private static readonly HttpClient Http = new HttpClient
         {
             Timeout = TimeSpan.FromSeconds(HttpTimeoutSec)

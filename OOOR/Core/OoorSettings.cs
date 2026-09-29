@@ -10,7 +10,6 @@ namespace ooor.Core
     ///   token=xxxx                       ← 登录令牌（Bearer，可留空表示匿名）
     ///
     /// 默认地址按编译配置切换（ooor.conf 未显式配置 server_url 时生效）：
-    ///   Debug（调试）  → http://127.0.0.1:8080（本地 go 网关）
     ///   Release（正式） → https://ooor.cc
     /// </summary>
     public sealed class OoorSettings
@@ -19,13 +18,9 @@ namespace ooor.Core
 
         public static string SettingsPath => Path.Combine(LlamaRuntime.ConfigRoot, SettingsFileName);
 
-#if DEBUG
-        /// <summary>调试默认地址：本地 go 网关（ooor-gateway，监听 :8080）</summary>
-        public const string DefaultServerUrl = "http://127.0.0.1:8080";
-#else
+ 
         /// <summary>正式默认地址：线上加速服务</summary>
         public const string DefaultServerUrl = "https://ooor.cc";
-#endif
 
         /// <summary>ooor 网关服务地址（含协议与端口，结尾不带 /）</summary>
         public string ServerUrl = "";
@@ -46,33 +41,10 @@ namespace ooor.Core
         public static OoorSettings Load()
         {
             var s = new OoorSettings();
-            try
-            {
-                if (!File.Exists(SettingsPath))
-                {
-                    // 未配置 → 使用编译期默认地址（Debug=本地网关，Release=线上）
-                    s.ServerUrl = DefaultServerUrl;
-                    return s;
-                }
-                foreach (string line in File.ReadAllLines(SettingsPath, Encoding.UTF8))
-                {
-                    string t = line.Trim();
-                    if (t.Length == 0 || t.StartsWith("#")) continue;
-                    int eq = t.IndexOf('=');
-                    if (eq <= 0) continue;
-                    string key = t.Substring(0, eq).Trim().ToLowerInvariant();
-                    string val = t.Substring(eq + 1).Trim();
-                    if (key == "server_url")
-                    {
-                        s.ServerUrl = val.TrimEnd('/');
-                        s.ServerUrlConfigured = s.ServerUrl.Length > 0;
-                    }
-                    else if (key == "token") s.Token = val;
-                }
-            }
-            catch { /* 读取失败按默认值 */ }
-            // 配置文件里 server_url 为空 → 回退编译期默认地址
-            if (string.IsNullOrWhiteSpace(s.ServerUrl)) s.ServerUrl = DefaultServerUrl;
+
+            // 未配置 → 使用编译期默认地址（Debug=本地网关，Release=线上）
+            s.ServerUrl = DefaultServerUrl;
+
             return s;
         }
 

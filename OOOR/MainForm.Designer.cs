@@ -428,10 +428,10 @@ namespace ooor
             this.cmbProfiles,
             this.toolStripSeparator3,
             this.toolStripButtonDownloadForm});
-            this.toolStrip1.Location = new System.Drawing.Point(0, 32);
+            this.toolStrip1.Location = new System.Drawing.Point(0, 36);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.System;
-            this.toolStrip1.Size = new System.Drawing.Size(1252, 33);
+            this.toolStrip1.Size = new System.Drawing.Size(1252, 38);
             this.toolStrip1.TabIndex = 25;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -440,14 +440,14 @@ namespace ooor
             this.toolStripButtonRefresh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripButtonRefresh.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripButtonRefresh.Name = "toolStripButtonRefresh";
-            this.toolStripButtonRefresh.Size = new System.Drawing.Size(50, 28);
+            this.toolStripButtonRefresh.Size = new System.Drawing.Size(50, 33);
             this.toolStripButtonRefresh.Text = "刷新";
             this.toolStripButtonRefresh.Click += new System.EventHandler(this.btnReload_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 33);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 38);
             // 
             // ToolStripMenuItemOpenConsole
             // 
@@ -455,7 +455,7 @@ namespace ooor
             this.ToolStripMenuItemOpenConsole.Image = ((System.Drawing.Image)(resources.GetObject("ToolStripMenuItemOpenConsole.Image")));
             this.ToolStripMenuItemOpenConsole.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.ToolStripMenuItemOpenConsole.Name = "ToolStripMenuItemOpenConsole";
-            this.ToolStripMenuItemOpenConsole.Size = new System.Drawing.Size(158, 28);
+            this.ToolStripMenuItemOpenConsole.Size = new System.Drawing.Size(158, 33);
             this.ToolStripMenuItemOpenConsole.Text = "打开控制台AI助手";
             this.ToolStripMenuItemOpenConsole.ToolTipText = "服务启动成功后才可点击";
             this.ToolStripMenuItemOpenConsole.Click += new System.EventHandler(this.ToolStripMenuItemOpenCli_Click);
@@ -463,7 +463,7 @@ namespace ooor
             // toolStripSeparator6
             // 
             this.toolStripSeparator6.Name = "toolStripSeparator6";
-            this.toolStripSeparator6.Size = new System.Drawing.Size(6, 33);
+            this.toolStripSeparator6.Size = new System.Drawing.Size(6, 38);
             // 
             // btnStart
             // 
@@ -471,14 +471,14 @@ namespace ooor
             this.btnStart.Image = ((System.Drawing.Image)(resources.GetObject("btnStart.Image")));
             this.btnStart.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnStart.Name = "btnStart";
-            this.btnStart.Size = new System.Drawing.Size(86, 28);
+            this.btnStart.Size = new System.Drawing.Size(86, 33);
             this.btnStart.Text = "启动服务";
             this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 33);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 38);
             // 
             // toolStripSplitButton3
             // 
@@ -487,7 +487,7 @@ namespace ooor
             this.ToolStripMenuItemConsoleTalkManager});
             this.toolStripSplitButton3.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripSplitButton3.Name = "toolStripSplitButton3";
-            this.toolStripSplitButton3.Size = new System.Drawing.Size(120, 28);
+            this.toolStripSplitButton3.Size = new System.Drawing.Size(120, 33);
             this.toolStripSplitButton3.Text = "Agent管理";
             this.toolStripSplitButton3.ButtonClick += new System.EventHandler(this.toolStripSplitButton3_ButtonClick);
             // 
@@ -501,7 +501,7 @@ namespace ooor
             // toolStripSeparator4
             // 
             this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 33);
+            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 38);
             // 
             // toolStripButtonSaveSlu
             // 
@@ -509,7 +509,7 @@ namespace ooor
             this.toolStripButtonSaveSlu.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonSaveSlu.Image")));
             this.toolStripButtonSaveSlu.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripButtonSaveSlu.Name = "toolStripButtonSaveSlu";
-            this.toolStripButtonSaveSlu.Size = new System.Drawing.Size(86, 28);
+            this.toolStripButtonSaveSlu.Size = new System.Drawing.Size(86, 33);
             this.toolStripButtonSaveSlu.Text = "保存方案";
             this.toolStripButtonSaveSlu.ToolTipText = "把当前启动参数保存为方案：未选方案=另存为，已选方案=覆盖";
             this.toolStripButtonSaveSlu.Click += new System.EventHandler(this.toolStripButtonSaveSlu_Click);
@@ -518,21 +518,21 @@ namespace ooor
             // 
             this.cmbProfiles.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbProfiles.Name = "cmbProfiles";
-            this.cmbProfiles.Size = new System.Drawing.Size(150, 33);
+            this.cmbProfiles.Size = new System.Drawing.Size(150, 38);
             this.cmbProfiles.ToolTipText = "选择参数方案，自动填入下方启动参数";
             this.cmbProfiles.SelectedIndexChanged += new System.EventHandler(this.cmbProfiles_SelectedIndexChanged);
             // 
             // toolStripSeparator3
             // 
             this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 33);
+            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 38);
             // 
             // toolStripButtonDownloadForm
             // 
             this.toolStripButtonDownloadForm.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripButtonDownloadForm.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripButtonDownloadForm.Name = "toolStripButtonDownloadForm";
-            this.toolStripButtonDownloadForm.Size = new System.Drawing.Size(86, 28);
+            this.toolStripButtonDownloadForm.Size = new System.Drawing.Size(86, 33);
             this.toolStripButtonDownloadForm.Text = "下载任务";
             this.toolStripButtonDownloadForm.Click += new System.EventHandler(this.toolStripButtonDownloadForm_Click);
             // 
@@ -582,7 +582,7 @@ namespace ooor
             this.帮助ToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1252, 32);
+            this.menuStrip1.Size = new System.Drawing.Size(1252, 36);
             this.menuStrip1.TabIndex = 28;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -599,7 +599,7 @@ namespace ooor
             this.toolStripSeparator12,
             this.清空日志ToolStripMenuItem});
             this.llama服务ToolStripMenuItem.Name = "llama服务ToolStripMenuItem";
-            this.llama服务ToolStripMenuItem.Size = new System.Drawing.Size(98, 28);
+            this.llama服务ToolStripMenuItem.Size = new System.Drawing.Size(98, 30);
             this.llama服务ToolStripMenuItem.Text = "Llama(&L)";
             // 
             // 启动服务ToolStripMenuItem
@@ -679,7 +679,7 @@ namespace ooor
             this.toolStripSeparator5,
             this.agent管理ToolStripMenuItem});
             this.模型ToolStripMenuItem.Name = "模型ToolStripMenuItem";
-            this.模型ToolStripMenuItem.Size = new System.Drawing.Size(92, 28);
+            this.模型ToolStripMenuItem.Size = new System.Drawing.Size(92, 30);
             this.模型ToolStripMenuItem.Text = "模型(&M)";
             // 
             // 管理ToolStripMenuItem
@@ -736,7 +736,7 @@ namespace ooor
             this.toolStripSeparator11,
             this.打开网页ToolStripMenuItem1});
             this.控制台ToolStripMenuItem.Name = "控制台ToolStripMenuItem";
-            this.控制台ToolStripMenuItem.Size = new System.Drawing.Size(104, 28);
+            this.控制台ToolStripMenuItem.Size = new System.Drawing.Size(104, 30);
             this.控制台ToolStripMenuItem.Text = "控制台(&C)";
             // 
             // 打开控制台AI助手ToolStripMenuItem
@@ -800,7 +800,7 @@ namespace ooor
             this.保存方案ToolStripMenuItem,
             this.管理方案ToolStripMenuItem1});
             this.方案ToolStripMenuItem.Name = "方案ToolStripMenuItem";
-            this.方案ToolStripMenuItem.Size = new System.Drawing.Size(85, 28);
+            this.方案ToolStripMenuItem.Size = new System.Drawing.Size(85, 30);
             this.方案ToolStripMenuItem.Text = "方案(&P)";
             // 
             // 保存方案ToolStripMenuItem
@@ -827,7 +827,7 @@ namespace ooor
             this.ToolStripMenuItemSetting,
             this.关于ToolStripMenuItem});
             this.帮助ToolStripMenuItem.Name = "帮助ToolStripMenuItem";
-            this.帮助ToolStripMenuItem.Size = new System.Drawing.Size(88, 28);
+            this.帮助ToolStripMenuItem.Size = new System.Drawing.Size(88, 30);
             this.帮助ToolStripMenuItem.Text = "更多(&H)";
             // 
             // 下载管理ToolStripMenuItem

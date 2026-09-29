@@ -259,12 +259,64 @@ namespace ooor
             }
         }
 
-        /// <summary>下载完成钩子（后台线程触发）：手动文件下载成功后回到 UI 线程刷新运行时</summary>
+        /// <summary>下载完成钩子（后台线程触发）：安装包完成后提示安装，其它手动下载刷新运行时</summary>
         private void OnDownloadTaskCompleted(DownloadTask task)
         {
+            if (task.IsInstaller)
+            {
+                if (!IsHandleCreated || IsDisposed) return;
+                string path = task.SavePath;
+                BeginInvoke((MethodInvoker)(() => PromptInstallAndExit(path)));
+                return;
+            }
             if (!string.IsNullOrEmpty(task.Tag)) return;   // 模型仓库 / llama 版本下载不走这里
             if (!IsHandleCreated || IsDisposed) return;    // 窗口已关：下载器仍在跑，静默忽略
             BeginInvoke((MethodInvoker)ReloadRuntime);
+        }
+
+        /// <summary>
+        /// 弹框提示安装包已就绪，点"是"后启动安装、终止 Ooor-cli、退出当前程序。
+        /// 可由 MainForm.OnDownloadTaskCompleted（下载完成自动弹）和 FileDownloadForm 右键"安装"调用。
+        /// </summary>
+        public static void PromptInstallAndExit(string installerPath)
+        {
+            var L = LanguageManager.Instance;
+            if (!File.Exists(installerPath))
+            {
+                MessageBox.Show(string.Format(L.T("updater.missing"), installerPath),
+                    L.T("updater.title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (MessageBox.Show(L.T("updater.installPrompt"),
+                    L.T("updater.title"),
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+
+            // 启动安装包（NSIS 安装程序，UseShellExecute 触发 UAC 提权）
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = installerPath,
+                    UseShellExecute = true,
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(string.Format(L.T("updater.launchFail"), ex.Message),
+                    L.T("updater.title"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // 终止所有 Ooor-cli.exe 进程（webcli 窗口可能正开着）
+            foreach (var p in Process.GetProcessesByName("Ooor-cli"))
+            {
+                try { p.Kill(); } catch { }
+            }
+
+            // 退出主程序（安装包接管）
+            Application.Exit();
         }
 
         /// <summary>按当前语言刷新主窗口菜单文本（一级菜单 + 所有子项）</summary>

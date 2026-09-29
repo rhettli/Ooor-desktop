@@ -292,6 +292,7 @@
   "fdf.btn.resume": "继续下载",
   "fdf.btn.redownload": "重新下载",
   "fdf.btn.about": "关于",
+  "fdf.menu.install": "安装",
   "fdf.menu.redownload": "重新下载",
   "fdf.menu.cleanPart": "清除半成品",
   "fdf.menu.changeSaveDir": "修改保存目录…",
@@ -559,6 +560,7 @@
   "abt.update.notes": "\r\n更新日志：{0}",
   "abt.update.latest": "已是最新版本（v{0}）",
   "abt.update.onlineVersion": "线上版本 v{0}",
+  "abt.update.download": "下载更新",
   "abt.msg.openBrowserFail": "无法打开浏览器：{0}",
   "abt.msg.caption": "提示",
   "abt.hint.localGateway": "（当前指向本地网关且未启动：可在「设置」里把服务地址改成 {0}）",
@@ -758,5 +760,10 @@
   "log.info.cmdExtraArgs": "[信息] 命令行附加参数：{0}",
   "log.info.cmdRunModel": "[信息] 已在 cmd 窗口运行模型：{0}",
   "log.info.cmdHint": "       直接在窗口里输入内容回车即可对话；输入 /exit 或按 Ctrl+C 结束（关窗即退出该模型）。",
-  "log.err.cmdStart": "[错误] cmd 窗口启动失败：{0}"
+  "log.err.cmdStart": "[错误] cmd 窗口启动失败：{0}",
+
+  "updater.title": "安装更新",
+  "updater.missing": "安装包不存在：{0}",
+  "updater.installPrompt": "Ooor 安装包下载完成，是否立即安装？",
+  "updater.launchFail": "启动安装程序失败：{0}"
 }

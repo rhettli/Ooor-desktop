@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,7 +38,8 @@ namespace ooor
 
             // 更新区：先给占位状态，Shown 后异步拉取真实结果（不阻塞窗口弹出）
             lblUpdateInfo.Text = "";
-            lnkLatest.Visible = false;      // 检查出结果前不显示，避免空跳转
+            //lnkLatest.Visible = false;      // 检查出结果前不显示，避免空跳转
+            buttonDownloadUpdate.Visible = false;   // 有新版本时才显示
 
             lnkLatest.LinkClicked += (s, e) => OpenHome();
             lnkGitHub.LinkClicked += (s, e) => OpenGitHub();
@@ -54,6 +56,7 @@ namespace ooor
             lblDesc.Text = L.T("abt.desc");
             lblDirs.Text = string.Format(L.T("abt.dirs"), LlamaRuntime.ConfigRoot);
             btnOk.Text = L.T("abt.ok");
+            buttonDownloadUpdate.Text = L.T("abt.update.download");
 
             lnkLatest.Text = string.Format(L.T("abt.link"), OoorUpdate.HomeUrl);
             lnkLatest.LinkArea = new LinkArea(0, lnkLatest.Text.Length);
@@ -105,7 +108,8 @@ namespace ooor
             {
                 SetUpdateState(L.T("abt.update.checking"), SystemColors.ControlText);
                 lblUpdateInfo.Text = "";
-                lnkLatest.Visible = false;
+                //lnkLatest.Visible = false;
+                buttonDownloadUpdate.Visible = false;
             }
         }
 
@@ -115,7 +119,7 @@ namespace ooor
             lblUpdateInfo.Text = message
                 + "\r\n" + string.Format(L.T("abt.update.requestUrl"), url)
                 + "\r\n" + FailureHint(url);
-            lnkLatest.Visible = true;
+            //lnkLatest.Visible = true;
         }
 
         private void ShowRelease(OoorRelease r)
@@ -148,7 +152,8 @@ namespace ooor
                 lblUpdateInfo.Text = sb.ToString();
             }
 
-            lnkLatest.Visible = true;
+            //lnkLatest.Visible = true;
+            buttonDownloadUpdate.Visible = r.HasUpdate;
         }
 
         private void SetUpdateState(string text, Color color)
@@ -228,6 +233,51 @@ namespace ooor
                 if (++used >= n) break;
             }
             return sb.ToString();
+        }
+
+        private void buttonDownloadUpdate_Click(object sender, EventArgs e)
+        {
+            if (_release == null || !_release.HasUpdate) return;
+
+            // 保存目录：优先用户下载文件夹，回退临时目录
+            string saveDir;
+            try
+            {
+                saveDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    "Downloads");
+                if (!Directory.Exists(saveDir)) saveDir = Path.GetTempPath();
+            }
+            catch { saveDir = Path.GetTempPath(); }
+
+            string url = _release.DownloadUrl;
+            if (string.IsNullOrEmpty(url))
+                url = OoorUpdate.CurrentServerUrl().TrimEnd('/') + "/api/v1/releases/"
+                      + Uri.EscapeDataString(_release.Version.Trim()) + "/download";
+
+            // 入队（已存在同 URL 未完成任务时 Enqueue 返回旧任务）
+            var task = DownloadManager.Instance.Enqueue(
+                tag: "installer",
+                fileName: _release.FileName,
+                url: url,
+                expectedSize: _release.Size,
+                saveDir: saveDir,
+                extractDir: null,
+                bearerToken: OoorSettings.Load().Token);
+            task.IsInstaller = true;
+
+            // 已下载完成的重复任务：直接提示安装
+            if (task.State == DownloadState.Completed && File.Exists(task.SavePath))
+            {
+                MainForm.PromptInstallAndExit(task.SavePath);
+            }
+            else
+            {
+                // 打开下载管理窗口让用户看到进度
+                FileDownloadForm.ShowManager(this);
+            }
+
+            Close();   // 关闭关于窗口
         }
     }
 }

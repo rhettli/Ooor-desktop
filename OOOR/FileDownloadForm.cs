@@ -88,6 +88,7 @@ namespace ooor
 
             // 行右键菜单（miPrimary 文本随任务状态在菜单打开时刷新，这里给默认值）
             if (miPrimary != null) miPrimary.Text = L.T("fdf.action.start");
+            if (miInstall != null) miInstall.Text = L.T("fdf.menu.install");
             if (miRedownload != null) miRedownload.Text = L.T("fdf.menu.redownload");
             if (miCleanPart != null) miCleanPart.Text = L.T("fdf.menu.cleanPart");
             if (miChangeSaveDir != null) miChangeSaveDir.Text = L.T("fdf.menu.changeSaveDir");
@@ -310,13 +311,20 @@ namespace ooor
 
         // ==================== 右键菜单 ====================
 
-        private ToolStripMenuItem miPrimary, miRedownload, miCleanPart, miChangeSaveDir,
+        private ToolStripMenuItem miPrimary, miInstall, miRedownload, miCleanPart, miChangeSaveDir,
                                    miChangeExtractDir, miOpenFolder, miCopyUrl, miViewUrl, miRemove;
 
         private void InitContextMenu()
         {
             miPrimary = new ToolStripMenuItem(L.T("fdf.action.start"));
             miPrimary.Click += (s, e) => { var t = ContextTask; if (t != null) HandlePrimaryAction(t); };
+            miInstall = new ToolStripMenuItem(L.T("fdf.menu.install"));
+            miInstall.Click += (s, e) =>
+            {
+                var t = ContextTask;
+                if (t != null && t.IsInstaller && t.State == DownloadState.Completed)
+                    MainForm.PromptInstallAndExit(t.SavePath);
+            };
             miRedownload = new ToolStripMenuItem(L.T("fdf.menu.redownload"));
             miRedownload.Click += (s, e) => { var t = ContextTask; if (t != null) RedownloadTask(t); };
             miCleanPart = new ToolStripMenuItem(L.T("fdf.menu.cleanPart"));
@@ -337,6 +345,7 @@ namespace ooor
             contextMenuRow.Items.AddRange(new ToolStripItem[]
             {
                 miPrimary,
+                miInstall,
                 miRedownload,
                 miCleanPart,
                 new ToolStripSeparator(),
@@ -371,6 +380,8 @@ namespace ooor
             {
                 miPrimary.Text = PrimaryActionMenuText(t.State);
                 miPrimary.Enabled = t.State != DownloadState.Completed && t.State != DownloadState.Extracting;
+                miInstall.Visible = t.IsInstaller;
+                miInstall.Enabled = t.IsInstaller && t.State == DownloadState.Completed;
                 miRedownload.Enabled = !busy && !isQueued;
                 miCleanPart.Enabled = !busy && hasPartial;
                 miChangeSaveDir.Enabled = !busy;
@@ -382,10 +393,11 @@ namespace ooor
             }
             else
             {
-                miPrimary.Enabled = miRedownload.Enabled = miCleanPart.Enabled =
+                miPrimary.Enabled = miInstall.Enabled = miRedownload.Enabled = miCleanPart.Enabled =
                 miChangeSaveDir.Enabled = miChangeExtractDir.Enabled =
                 miOpenFolder.Enabled = miCopyUrl.Enabled = miViewUrl.Enabled =
                 miRemove.Enabled = false;
+                miInstall.Visible = false;
             }
         }
 

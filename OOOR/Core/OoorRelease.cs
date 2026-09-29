@@ -49,16 +49,12 @@ namespace ooor.Core
         private static readonly JavaScriptSerializer _ser = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
 
         /// <summary>
-        /// 更新检查实际使用的服务地址：
-        ///   - ooor.conf 里显式配置了 server_url → 用它（便于对着本地网关联调）；
-        ///   - 没配置 → 直接用官网域名。
-        /// 为什么要这样：编译期默认地址在 Debug 配置下是 http://127.0.0.1:8080（本地 go 网关），
-        /// 开发机没启动网关时会一律「检查更新失败」，而版本发布信息本来就在官网上。
+        /// 更新检查实际使用的服务地址
         /// </summary>
         public static string CurrentServerUrl()
         {
             var set = OoorSettings.Load();
-            return set.ServerUrlConfigured ? set.ServerUrl : HomeUrl;
+            return set.ServerUrl;
         }
 
         /// <summary>
@@ -68,10 +64,9 @@ namespace ooor.Core
         /// </summary>
         public static async Task<OoorRelease> CheckLatestAsync(string current, CancellationToken ct)
         {
-            string url = CurrentServerUrl().TrimEnd('/') + "/api/v1/releases/latest"
-                + (string.IsNullOrWhiteSpace(current)
-                    ? ""
-                    : "?current=" + Uri.EscapeDataString(current.Trim()));
+            string url = CurrentServerUrl().TrimEnd('/') + "/api/v1/releases/latest";
+            url += (string.IsNullOrWhiteSpace(current) ? "" : "?current=" + Uri.EscapeDataString(current.Trim()));
+
             string token = OoorSettings.Load().Token;
 
             for (int attempt = 1; ; attempt++)
@@ -97,24 +92,17 @@ namespace ooor.Core
 
         private static async Task<OoorRelease> RequestOnceAsync(string url, string token, CancellationToken ct)
         {
-            using (var req = new HttpRequestMessage(HttpMethod.Get, url))
+            // 每次新建并释放：避免静态 HttpClient 在进程生命周期内持有已失效的 DNS / 连接
+            using (HttpClient client = new HttpClient())
             {
-                req.Headers.UserAgent.Add(new ProductInfoHeaderValue("ooor", "1.0"));
-                // 更新检查必须实时：绕开系统/中间层缓存
-                req.Headers.CacheControl = new CacheControlHeaderValue { NoCache = true };
-                if (!string.IsNullOrWhiteSpace(token))
-                    req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Trim());
+                client.Timeout = TimeSpan.FromSeconds(5);
+                client.DefaultRequestHeaders.Add("Ooor", DEF.ver);
 
-                using (var resp = await _http.SendAsync(req, ct))
-                {
-                    string text = await resp.Content.ReadAsStringAsync();
-                    if (!resp.IsSuccessStatusCode)
-                    {
-                        string msg = TryReadError(text);
-                        throw new Exception(msg ?? ("服务器返回 " + (int)resp.StatusCode + " " + resp.ReasonPhrase));
-                    }
-                    return Parse(text);
-                }
+                // GetStringAsync 在 .NET Framework 4.8 不接受 CancellationToken；
+                // 超时由 Timeout 控制（触发 TaskCanceledException），窗口关闭时由 CheckLatestAsync 的 ct.ThrowIfCancellationRequested 兜底
+                // 异常直接向上抛：经 CheckLatestAsync 瞬时重试后由 AboutForm.ShowError 显示真实错误信息
+                string content = await client.GetStringAsync(url);
+                return Parse(content);
             }
         }
 
@@ -123,7 +111,7 @@ namespace ooor.Core
         private static OoorRelease Parse(string jsonText)
         {
             var d = _ser.Deserialize<Dictionary<string, object>>(jsonText);
-            if (d == null) throw new Exception("服务端返回内容无法解析。");
+            if (d == null) throw new Exception("unknow data");
 
             return new OoorRelease
             {
@@ -140,23 +128,6 @@ namespace ooor.Core
                 DownloadUrl = Str(d, "download_url"),
                 HasUpdate = Flag(d, "has_update"),
             };
-        }
-
-        /// <summary>取错误响应里的 {error:"..."} 文案；没有则返回 null（由调用方用状态码兜底）</summary>
-        private static string TryReadError(string jsonText)
-        {
-            if (string.IsNullOrWhiteSpace(jsonText)) return null;
-            try
-            {
-                var d = _ser.Deserialize<Dictionary<string, object>>(jsonText);
-                if (d != null && d.TryGetValue("error", out var v) && v != null)
-                {
-                    string s = v.ToString().Trim();
-                    if (s.Length > 0) return s;
-                }
-            }
-            catch { /* 非 JSON 错误体：交给状态码兜底 */ }
-            return null;
         }
 
         private static string Str(Dictionary<string, object> d, string key)

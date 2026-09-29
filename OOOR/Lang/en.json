@@ -292,6 +292,7 @@
   "fdf.btn.resume": "Resume",
   "fdf.btn.redownload": "Redownload",
   "fdf.btn.about": "About",
+  "fdf.menu.install": "Install",
   "fdf.menu.redownload": "Redownload",
   "fdf.menu.cleanPart": "Clear partial files",
   "fdf.menu.changeSaveDir": "Change save folder…",
@@ -559,6 +560,7 @@
   "abt.update.notes": "\r\nRelease notes: {0}",
   "abt.update.latest": "You're using the latest version (v{0})",
   "abt.update.onlineVersion": "Online version v{0}",
+  "abt.update.download": "Download Update",
   "abt.msg.openBrowserFail": "Failed to open browser: {0}",
   "abt.msg.caption": "Notice",
   "abt.hint.localGateway": "(Currently pointing to a local gateway that is not running: change the server address to {0} in Settings)",
@@ -758,5 +760,10 @@
   "log.info.cmdExtraArgs": "[Info] Command line extra arguments: {0}",
   "log.info.cmdRunModel": "[Info] Running model in cmd window: {0}",
   "log.info.cmdHint": "       Type and press Enter to chat; type /exit or press Ctrl+C to end (closing the window exits the model).",
-  "log.err.cmdStart": "[Error] Failed to start cmd window: {0}"
+  "log.err.cmdStart": "[Error] Failed to start cmd window: {0}",
+
+  "updater.title": "Install Update",
+  "updater.missing": "Installer not found: {0}",
+  "updater.installPrompt": "Ooor installer download complete. Install now?",
+  "updater.launchFail": "Failed to launch installer: {0}"
 }

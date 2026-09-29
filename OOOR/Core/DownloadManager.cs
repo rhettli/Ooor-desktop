@@ -32,6 +32,7 @@ namespace ooor.Core
         public readonly string Id = Guid.NewGuid().ToString("N");
 
         public string Tag;           // 分组显示：模型仓库 id 或 release tag
+        public bool IsInstaller;     // Ooor 自身安装包（完成后提示安装并退出）
         public string FileName;      // 落盘文件名（可含仓库内子目录，如 UD-Q4_K_XL/xxx.gguf）
         public string Url;
         public long ExpectedSize;    // 列表接口给的参考大小（0 = 未知）

@@ -37,6 +37,7 @@ namespace ooor
             this.lnkLatest = new System.Windows.Forms.LinkLabel();
             this.lnkGitHub = new System.Windows.Forms.LinkLabel();
             this.btnOk = new System.Windows.Forms.Button();
+            this.buttonDownloadUpdate = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // lblTitle
@@ -86,16 +87,16 @@ namespace ooor
             // 
             this.lblUpdateState.AutoSize = true;
             this.lblUpdateState.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.lblUpdateState.Location = new System.Drawing.Point(18, 335);
+            this.lblUpdateState.Location = new System.Drawing.Point(18, 322);
             this.lblUpdateState.Name = "lblUpdateState";
             this.lblUpdateState.Size = new System.Drawing.Size(148, 25);
             this.lblUpdateState.TabIndex = 4;
             this.lblUpdateState.Text = "正在检查更新…";
-            // 
+            //
             // lblUpdateInfo
-            // 
+            //
             this.lblUpdateInfo.AutoSize = true;
-            this.lblUpdateInfo.Location = new System.Drawing.Point(18, 322);
+            this.lblUpdateInfo.Location = new System.Drawing.Point(18, 350);
             this.lblUpdateInfo.MaximumSize = new System.Drawing.Size(446, 0);
             this.lblUpdateInfo.Name = "lblUpdateInfo";
             this.lblUpdateInfo.Size = new System.Drawing.Size(0, 18);
@@ -104,7 +105,7 @@ namespace ooor
             // lnkLatest
             // 
             this.lnkLatest.AutoSize = true;
-            this.lnkLatest.Location = new System.Drawing.Point(18, 408);
+            this.lnkLatest.Location = new System.Drawing.Point(18, 424);
             this.lnkLatest.Name = "lnkLatest";
             this.lnkLatest.Size = new System.Drawing.Size(152, 18);
             this.lnkLatest.TabIndex = 6;
@@ -114,7 +115,7 @@ namespace ooor
             // lnkGitHub
             // 
             this.lnkGitHub.AutoSize = true;
-            this.lnkGitHub.Location = new System.Drawing.Point(18, 432);
+            this.lnkGitHub.Location = new System.Drawing.Point(18, 448);
             this.lnkGitHub.Name = "lnkGitHub";
             this.lnkGitHub.Size = new System.Drawing.Size(62, 18);
             this.lnkGitHub.TabIndex = 8;
@@ -124,18 +125,30 @@ namespace ooor
             // btnOk
             // 
             this.btnOk.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btnOk.Location = new System.Drawing.Point(376, 464);
+            this.btnOk.Location = new System.Drawing.Point(376, 479);
             this.btnOk.Name = "btnOk";
             this.btnOk.Size = new System.Drawing.Size(88, 30);
             this.btnOk.TabIndex = 7;
             this.btnOk.Text = "确定";
             this.btnOk.UseVisualStyleBackColor = true;
             // 
+            // buttonDownloadUpdate
+            // 
+            this.buttonDownloadUpdate.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.buttonDownloadUpdate.Location = new System.Drawing.Point(237, 479);
+            this.buttonDownloadUpdate.Name = "buttonDownloadUpdate";
+            this.buttonDownloadUpdate.Size = new System.Drawing.Size(122, 30);
+            this.buttonDownloadUpdate.TabIndex = 9;
+            this.buttonDownloadUpdate.Text = "下载更新";
+            this.buttonDownloadUpdate.UseVisualStyleBackColor = true;
+            this.buttonDownloadUpdate.Click += new System.EventHandler(this.buttonDownloadUpdate_Click);
+            // 
             // AboutForm
             // 
             this.AcceptButton = this.btnOk;
             this.CancelButton = this.btnOk;
-            this.ClientSize = new System.Drawing.Size(480, 508);
+            this.ClientSize = new System.Drawing.Size(480, 525);
+            this.Controls.Add(this.buttonDownloadUpdate);
             this.Controls.Add(this.lblTitle);
             this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.lblDesc);
@@ -168,5 +181,6 @@ namespace ooor
         private System.Windows.Forms.LinkLabel lnkLatest;
         private System.Windows.Forms.LinkLabel lnkGitHub;
         private System.Windows.Forms.Button btnOk;
+        private System.Windows.Forms.Button buttonDownloadUpdate;
     }
 }
