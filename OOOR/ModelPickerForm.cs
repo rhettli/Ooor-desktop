@@ -138,5 +138,11 @@ namespace ooor
                 f.ShowDialog(this);
             }
         }
+
+        private void ModelPickerForm_Load(object sender, EventArgs e)
+        {
+            Left += 200;
+            Top += 20;
+        }
     }
 }

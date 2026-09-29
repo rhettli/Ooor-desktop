@@ -55,6 +55,9 @@ namespace ooor
             // 
             // listModels
             // 
+            this.listModels.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.listModels.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colModelName,
             this.colModelMmproj,
@@ -72,7 +75,7 @@ namespace ooor
             this.listModels.MultiSelect = false;
             this.listModels.Name = "listModels";
             this.listModels.ShowItemToolTips = true;
-            this.listModels.Size = new System.Drawing.Size(1266, 524);
+            this.listModels.Size = new System.Drawing.Size(1498, 711);
             this.listModels.TabIndex = 0;
             this.listModels.UseCompatibleStateImageBehavior = false;
             this.listModels.View = System.Windows.Forms.View.Details;
@@ -97,7 +100,6 @@ namespace ooor
             // colModelType
             // 
             this.colModelType.Text = "类型";
-            this.colModelType.Width = 46;
             // 
             // colModelSize
             // 
@@ -191,7 +193,7 @@ namespace ooor
             this.btnSoftDelete});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(1266, 33);
+            this.toolStrip1.Size = new System.Drawing.Size(1498, 33);
             this.toolStrip1.TabIndex = 2;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -266,7 +268,7 @@ namespace ooor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1266, 560);
+            this.ClientSize = new System.Drawing.Size(1498, 747);
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.listModels);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;

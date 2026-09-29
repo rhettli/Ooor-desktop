@@ -33,31 +33,11 @@ namespace ooor
             this.miManageAll = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenu.SuspendLayout();
             this.SuspendLayout();
-            //
-            // contextMenu
-            //
-            this.contextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miSelect,
-            this.miManageAll});
-            this.contextMenu.Name = "contextMenu";
-            this.contextMenu.Size = new System.Drawing.Size(200, 48);
-            //
-            // miSelect
-            //
-            this.miSelect.Name = "miSelect";
-            this.miSelect.Size = new System.Drawing.Size(199, 22);
-            this.miSelect.Click += new System.EventHandler(this.ConfirmSelection);
-            //
-            // miManageAll
-            //
-            this.miManageAll.Name = "miManageAll";
-            this.miManageAll.Size = new System.Drawing.Size(199, 22);
-            this.miManageAll.Click += new System.EventHandler(this.miManageAll_Click);
-            //
+            // 
             // listVersions
-            //
-            this.listVersions.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            // 
+            this.listVersions.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.listVersions.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colVersionName,
@@ -78,29 +58,50 @@ namespace ooor
             this.listVersions.UseCompatibleStateImageBehavior = false;
             this.listVersions.View = System.Windows.Forms.View.Details;
             this.listVersions.ItemActivate += new System.EventHandler(this.ConfirmSelection);
-            //
+            // 
             // colVersionName
-            //
+            // 
             this.colVersionName.Text = "版本";
             this.colVersionName.Width = 260;
-            //
+            // 
             // colVersionDir
-            //
+            // 
             this.colVersionDir.Text = "安装目录";
             this.colVersionDir.Width = 200;
-            //
+            // 
             // colVersionStatus
-            //
+            // 
             this.colVersionStatus.Text = "状态";
             this.colVersionStatus.Width = 80;
-            //
+            // 
             // colVersionState
-            //
+            // 
             this.colVersionState.Text = "使用中";
             this.colVersionState.Width = 90;
-            //
+            // 
+            // contextMenu
+            // 
+            this.contextMenu.ImageScalingSize = new System.Drawing.Size(24, 24);
+            this.contextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miSelect,
+            this.miManageAll});
+            this.contextMenu.Name = "contextMenu";
+            this.contextMenu.Size = new System.Drawing.Size(71, 52);
+            // 
+            // miSelect
+            // 
+            this.miSelect.Name = "miSelect";
+            this.miSelect.Size = new System.Drawing.Size(70, 24);
+            this.miSelect.Click += new System.EventHandler(this.ConfirmSelection);
+            // 
+            // miManageAll
+            // 
+            this.miManageAll.Name = "miManageAll";
+            this.miManageAll.Size = new System.Drawing.Size(70, 24);
+            this.miManageAll.Click += new System.EventHandler(this.miManageAll_Click);
+            // 
             // LlamaVersionPickerForm
-            //
+            // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(960, 486);
@@ -114,6 +115,7 @@ namespace ooor
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "选择 llama 版本";
+            this.Load += new System.EventHandler(this.LlamaVersionPickerForm_Load);
             this.contextMenu.ResumeLayout(false);
             this.ResumeLayout(false);
 

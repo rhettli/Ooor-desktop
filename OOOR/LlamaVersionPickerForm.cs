@@ -178,5 +178,11 @@ namespace ooor
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
+        private void LlamaVersionPickerForm_Load(object sender, EventArgs e)
+        {
+            Left += 200;
+            Top += 20;
+        }
     }
 }

@@ -114,6 +114,7 @@ namespace ooor
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "选择模型";
+            this.Load += new System.EventHandler(this.ModelPickerForm_Load);
             this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
 
