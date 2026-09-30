@@ -22,6 +22,8 @@ namespace ooor.Core
             {
                 LanguageManager.Instance.LanguageChanged -= OnLanguageChanged;
             };
+
+            Icon = DEF.Icon;
         }
 
         private void OnLanguageChanged(object sender, EventArgs e)
