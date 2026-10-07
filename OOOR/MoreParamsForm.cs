@@ -21,7 +21,32 @@ namespace ooor
         {
             InitializeComponent();
             toolStripTextBoxFilter.TextChanged += (s, e) => ReloadList();
+            toolStripButtonHelp.Click += (s, e) => ShowHelp();
             ReloadList();
+        }
+
+        /// <summary>工具栏「帮助」按钮：弹出窗口介绍本窗口的使用逻辑和用法</summary>
+        private void ShowHelp()
+        {
+            using (var f = new Form
+            {
+                Text = L.T("mpf.help.title"),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                ShowInTaskbar = false,
+                ClientSize = new Size(560, 460)
+            })
+            {
+                f.Controls.Add(new Label
+                {
+                    Dock = DockStyle.Fill,
+                    Text = L.T("mpf.help.text"),
+                    Padding = new Padding(14)
+                });
+                f.ShowDialog(this);
+            }
         }
 
         /// <summary>语言切换时刷新设计器控件文本，并通过 ReloadList() 刷新动态内容</summary>
@@ -37,6 +62,8 @@ namespace ooor
             新建参数ToolStripMenuItem.Text = L.T("mpf.menu.newParam");
             编辑参数信息ToolStripMenuItem.Text = L.T("mpf.menu.editInfo");
             删除参数ToolStripMenuItem.Text = L.T("mpf.menu.deleteParam");
+
+            toolStripButtonHelp.Text = L.T("mpf.btn.help");
 
             // 窗口标题与列表内动态文本（含「（未设置）」）一并刷新
             ReloadList();

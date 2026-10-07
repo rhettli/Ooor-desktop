@@ -248,6 +248,9 @@
   "mpf.mustInt": "The value must be an integer.",
   "mpf.mustNumber": "The value must be a number.",
   "mpf.titleCount": "More Parameters  -  {0} / {1} enabled",
+  "mpf.btn.help": "Help",
+  "mpf.help.title": "Usage",
+  "mpf.help.text": "[Purpose]\r\nThis window lists all optional llama-server startup parameters\r\n(name / value / description). Values are written to server_params.conf\r\nimmediately and appended to the command line in list order when the\r\nservice starts. An empty value means the parameter is not passed.\r\n\r\n[Editing a Value]\r\n- Double-click a row, or right-click and choose \"Edit Value\".\r\n- The editor depends on the parameter type: Bool offers\r\n  Not enabled / true / false; Enum offers a drop-down of options;\r\n  Int / Float / Text use a text box.\r\n- Int / Float values are validated; invalid input is not saved.\r\n\r\n[Filter]\r\n- Typing in the \"Filter\" box filters instantly by name, value\r\n  or description; a match in any column keeps the row.\r\n- Matching rows are shown in bold blue; clear the box to restore\r\n  the full list.\r\n\r\n[Custom Parameters]\r\n- Right-click \"New Parameter\" to add your own startup parameter\r\n  (names should start with - or --).\r\n- Custom parameters can be edited or deleted via the context menu.\r\n- Built-in parameters cannot be renamed or deleted.\r\n\r\n[Colors]\r\n- Green = a value is set (passed to llama-server at startup).\r\n- Black = not set (the parameter is not passed at startup).\r\n\r\nNote: Context / Predict / GPU layers / Host / Port from the main\r\nwindow are not listed here; change them on the main window.",
 
   "fdb.title": "Prepare Download",
   "fdb.lbl.url": "URL:",
