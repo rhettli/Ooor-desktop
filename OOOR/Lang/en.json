@@ -405,7 +405,8 @@
   "ldf.btn.refresh": "Fetch",
   "ldf.btn.openInBrowser": "Open in Browser",
   "ldf.btn.cpu": "Install CPU Build",
-  "ldf.btn.cpuCuda": "Install CPU+CUDA Build",
+  "ldf.btn.cuda12": "Install CUDA 12 Build",
+  "ldf.btn.cuda13": "Install CUDA 13 Build",
   "ldf.btn.rocm": "Install ROCm Build",
   "ldf.btn.sycl": "Install SYCL Build",
   "ldf.btn.vulkan": "Install Vulkan Build",
@@ -429,7 +430,8 @@
   "ldf.status.selected": "{0} selected. Available downloads: {1}",
   "ldf.status.downloadCancelled": "{0} build download cancelled.",
   "ldf.status.cpuSubmitted": "CPU build download task submitted; it will be extracted to {0}. See the Download Manager for progress.",
-  "ldf.status.cpuCudaSubmitted": "Submitted 2 tasks (CPU main package + CUDA runtime); both will be extracted to {0}.",
+  "ldf.status.cuda12Submitted": "Submitted 2 tasks (CUDA 12 main package + CUDA runtime DLLs); both will be extracted to {0}. See the Download Manager for progress.",
+  "ldf.status.cuda13Submitted": "Submitted 2 tasks (CUDA 13 main package + CUDA runtime DLLs); both will be extracted to {0}. See the Download Manager for progress.",
   "ldf.status.taskSubmitted": "{0} build download task submitted; it will be extracted to {1}.",
 
   "prof.title": "Profile Manager",
@@ -603,6 +605,7 @@
   "lic.total": "Total download size: {0}",
   "lic.ok": "Confirm",
   "lic.cancel": "Cancel",
+  "lic.tip.autoExtract": "Download will auto-extract. No action needed — click Refresh on Home page to use",
 
   "dcf.title": "Delete Download Task",
   "dcf.msg.exists": "Delete task \"{0}\"?\n{1}",

@@ -46,9 +46,8 @@ namespace ooor
                 f.MaximizeBox = false;
                 f.FormBorderStyle = FormBorderStyle.FixedDialog;
                 f.Font = SystemFonts.DefaultFont;
-                f.ClientSize = new Size(660, 400);
+                f.ClientSize = new Size(660, 440);
 
-                // 顶部询问
                 var lblQuestion = new Label
                 {
                     Text = string.Format(L.T("lic.question"), kindName, tagName ?? "", items.Count),
@@ -56,7 +55,6 @@ namespace ooor
                     Size = new Size(628, 22)
                 };
 
-                // 文件清单：文件名 / 大小 / 解压目录
                 var list = new ListView
                 {
                     Location = new Point(16, 42),
@@ -80,7 +78,6 @@ namespace ooor
                     list.Items.Add(lvi);
                 }
 
-                // 合计大小
                 var lblTotal = new Label
                 {
                     Text = string.Format(L.T("lic.total"), FormatSize(total)),
@@ -88,8 +85,17 @@ namespace ooor
                     Size = new Size(400, 22)
                 };
 
-                // 按钮：确认 / 取消（右对齐，取消在最右）
-                int btnY = 400 - 34 - 14;
+                var lblTip = new Label
+                {
+                    Text = L.T("lic.tip.autoExtract"),
+                    Location = new Point(16, 346),
+                    Size = new Size(628, 36),
+                    ForeColor = System.Drawing.Color.DimGray,
+                    Font = new System.Drawing.Font(SystemFonts.DefaultFont.FontFamily, 8.5F),
+                    AutoEllipsis = true
+                };
+
+                int btnY = 440 - 34 - 14;
                 var btnOk = new Button
                 {
                     Text = L.T("lic.ok"),
@@ -108,6 +114,7 @@ namespace ooor
                 f.Controls.Add(lblQuestion);
                 f.Controls.Add(list);
                 f.Controls.Add(lblTotal);
+                f.Controls.Add(lblTip);
                 f.Controls.Add(btnOk);
                 f.Controls.Add(btnCancel);
                 f.AcceptButton = btnOk;

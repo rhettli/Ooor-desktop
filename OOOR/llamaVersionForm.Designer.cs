@@ -117,41 +117,41 @@ namespace ooor
             this.miDisableVersion,
             this.miDeleteVersion});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(189, 154);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(149, 114);
             this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // miRefresh
             // 
             this.miRefresh.Name = "miRefresh";
-            this.miRefresh.Size = new System.Drawing.Size(188, 30);
+            this.miRefresh.Size = new System.Drawing.Size(148, 22);
             this.miRefresh.Text = "刷新";
             this.miRefresh.Click += new System.EventHandler(this.miRefresh_Click);
             // 
             // miInstallNew
             // 
             this.miInstallNew.Name = "miInstallNew";
-            this.miInstallNew.Size = new System.Drawing.Size(188, 30);
+            this.miInstallNew.Size = new System.Drawing.Size(148, 22);
             this.miInstallNew.Text = "安装新版本";
             this.miInstallNew.Click += new System.EventHandler(this.miInstallNew_Click);
             // 
             // miOpenDir
             // 
             this.miOpenDir.Name = "miOpenDir";
-            this.miOpenDir.Size = new System.Drawing.Size(188, 30);
+            this.miOpenDir.Size = new System.Drawing.Size(148, 22);
             this.miOpenDir.Text = "打开安装目录";
             this.miOpenDir.Click += new System.EventHandler(this.miOpenDir_Click);
             // 
             // miDisableVersion
             // 
             this.miDisableVersion.Name = "miDisableVersion";
-            this.miDisableVersion.Size = new System.Drawing.Size(188, 30);
+            this.miDisableVersion.Size = new System.Drawing.Size(148, 22);
             this.miDisableVersion.Text = "禁用此版本";
             this.miDisableVersion.Click += new System.EventHandler(this.miDisableVersion_Click);
             // 
             // miDeleteVersion
             // 
             this.miDeleteVersion.Name = "miDeleteVersion";
-            this.miDeleteVersion.Size = new System.Drawing.Size(188, 30);
+            this.miDeleteVersion.Size = new System.Drawing.Size(148, 22);
             this.miDeleteVersion.Text = "删除此版本";
             this.miDeleteVersion.Click += new System.EventHandler(this.miDeleteVersion_Click);
             // 
@@ -167,7 +167,7 @@ namespace ooor
             this.toolStripBtnDelete});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(706, 33);
+            this.toolStrip1.Size = new System.Drawing.Size(706, 25);
             this.toolStrip1.TabIndex = 3;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -175,7 +175,7 @@ namespace ooor
             // 
             this.toolStripBtnRefresh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripBtnRefresh.Name = "toolStripBtnRefresh";
-            this.toolStripBtnRefresh.Size = new System.Drawing.Size(50, 28);
+            this.toolStripBtnRefresh.Size = new System.Drawing.Size(36, 22);
             this.toolStripBtnRefresh.Text = "刷新";
             this.toolStripBtnRefresh.ToolTipText = "重新扫描已安装的 llama.cpp 版本";
             this.toolStripBtnRefresh.Click += new System.EventHandler(this.miRefresh_Click);
@@ -184,7 +184,7 @@ namespace ooor
             // 
             this.toolStripBtnInstall.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripBtnInstall.Name = "toolStripBtnInstall";
-            this.toolStripBtnInstall.Size = new System.Drawing.Size(104, 28);
+            this.toolStripBtnInstall.Size = new System.Drawing.Size(72, 22);
             this.toolStripBtnInstall.Text = "安装新版本";
             this.toolStripBtnInstall.ToolTipText = "从 GitHub 下载新版本安装包";
             this.toolStripBtnInstall.Click += new System.EventHandler(this.miInstallNew_Click);
@@ -192,14 +192,14 @@ namespace ooor
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 33);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
             // 
             // toolStripBtnDisable
             // 
             this.toolStripBtnDisable.CheckOnClick = true;
             this.toolStripBtnDisable.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripBtnDisable.Name = "toolStripBtnDisable";
-            this.toolStripBtnDisable.Size = new System.Drawing.Size(50, 28);
+            this.toolStripBtnDisable.Size = new System.Drawing.Size(36, 22);
             this.toolStripBtnDisable.Text = "禁用";
             this.toolStripBtnDisable.ToolTipText = "切换当前选中版本的启用/禁用状态";
             this.toolStripBtnDisable.Click += new System.EventHandler(this.miDisableVersion_Click);
@@ -208,7 +208,7 @@ namespace ooor
             // 
             this.toolStripBtnOpenDir.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripBtnOpenDir.Name = "toolStripBtnOpenDir";
-            this.toolStripBtnOpenDir.Size = new System.Drawing.Size(86, 28);
+            this.toolStripBtnOpenDir.Size = new System.Drawing.Size(60, 22);
             this.toolStripBtnOpenDir.Text = "打开目录";
             this.toolStripBtnOpenDir.ToolTipText = "在资源管理器中打开当前选中版本的安装目录";
             this.toolStripBtnOpenDir.Click += new System.EventHandler(this.miOpenDir_Click);
@@ -217,7 +217,7 @@ namespace ooor
             // 
             this.toolStripBtnDelete.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripBtnDelete.Name = "toolStripBtnDelete";
-            this.toolStripBtnDelete.Size = new System.Drawing.Size(86, 28);
+            this.toolStripBtnDelete.Size = new System.Drawing.Size(60, 22);
             this.toolStripBtnDelete.Text = "删除版本";
             this.toolStripBtnDelete.ToolTipText = "把当前选中版本目录删除到回收站（可还原）";
             this.toolStripBtnDelete.Click += new System.EventHandler(this.miDeleteVersion_Click);

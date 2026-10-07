@@ -77,10 +77,11 @@ namespace ooor
             Load += LlamaDownloadForm_Load;
             FormClosing += LlamaDownloadForm_FormClosing;
 
-            // 右侧下载按钮（布局在 Designer 中）：button1=CPU，button3=CPU+CUDA，
-            // button5=ROCm，button4=SYCL，button2=Vulkan
+            // 右侧下载按钮（布局在 Designer 中）：button1=CPU，button3=CUDA 12，
+            // button6=CUDA 13，button5=ROCm，button4=SYCL，button2=Vulkan
             button1.Click += btnCpu_Click;
-            button3.Click += btnCpuCuda_Click;
+            button3.Click += btnCuda12_Click;
+            button6.Click += btnCuda13_Click;
             button5.Click += btnRocm_Click;
             button4.Click += btnSycl_Click;
             button2.Click += btnVulkan_Click;
@@ -116,9 +117,11 @@ namespace ooor
             btnRefresh.Text = L.T("ldf.btn.refresh");
             btnOpenInBrowser.Text = L.T("ldf.btn.openInBrowser");
 
-            // 右侧安装按钮（button1=CPU，button3=CPU+CUDA，button5=ROCm，button4=SYCL，button2=Vulkan）
+            // 右侧安装按钮（button1=CPU，button3=CUDA 12，button6=CUDA 13，
+            // button5=ROCm，button4=SYCL，button2=Vulkan）
             button1.Text = L.T("ldf.btn.cpu");
-            button3.Text = L.T("ldf.btn.cpuCuda");
+            button3.Text = L.T("ldf.btn.cuda12");
+            button6.Text = L.T("ldf.btn.cuda13");
             button5.Text = L.T("ldf.btn.rocm");
             button4.Text = L.T("ldf.btn.sycl");
             button2.Text = L.T("ldf.btn.vulkan");
@@ -446,45 +449,52 @@ namespace ooor
             button1.Enabled = on;
             button2.Enabled = on;
             button3.Enabled = on;
+            button6.Enabled = on;
             button4.Enabled = on;
             button5.Enabled = on;
 
-            // 加载/禁用期间：所有匹配标签一并隐藏
             label_ok_cpu.Visible = false;
             label_ok_cudacuda.Visible = false;
+            label_ok_cuda13.Visible = false;
             label_ok_rocm.Visible = false;
             label_ok_sycl.Visible = false;
             label_ok_vulkan.Visible = false;
         }
 
-        /// <summary>按选中版本的资产名匹配启用/禁用各下载按钮（匹配上才可用，并在按钮右侧显示 ✔ 标签）</summary>
         private void UpdateVersionButtons()
         {
             var release = SelectedRelease;
             var assets = release?.assets;
             bool cpu = FindAsset(assets, "win-cpu", false) != null;
-            bool cuda = cpu && FindAsset(assets, "win-cuda", true) != null;
+            bool cuda12Main = FindAsset(assets, "win-cuda", false, "12") != null;
+            bool cuda12Dll = FindAsset(assets, "win-cuda", true, "12") != null;
+            bool cuda12 = cuda12Main && cuda12Dll;
+            bool cuda13Main = FindAsset(assets, "win-cuda", false, "13") != null;
+            bool cuda13Dll = FindAsset(assets, "win-cuda", true, "13") != null;
+            bool cuda13 = cuda13Main && cuda13Dll;
             bool rocm = FindAsset(assets, "win-rocm", false) != null;
             bool sycl = FindAsset(assets, "win-sycl", false) != null;
             bool vulkan = FindAsset(assets, "win-vulkan", false) != null;
 
             button1.Enabled = cpu;
-            button3.Enabled = cuda;
+            button3.Enabled = cuda12;
+            button6.Enabled = cuda13;
             button5.Enabled = rocm;
             button4.Enabled = sycl;
             button2.Enabled = vulkan;
 
-            // 匹配成功的安装按钮右侧显示 ✔
             label_ok_cpu.Visible = cpu;
-            label_ok_cudacuda.Visible = cuda;
+            label_ok_cudacuda.Visible = cuda12;
+            label_ok_cuda13.Visible = cuda13;
             label_ok_rocm.Visible = rocm;
             label_ok_sycl.Visible = sycl;
             label_ok_vulkan.Visible = vulkan;
 
             if (release != null)
             {
-                // 架构名为产品专有名（CPU / CUDA / ROCm / SYCL / Vulkan），不翻译
-                string available = (cpu ? "CPU " : "") + (cuda ? "CPU+CUDA " : "")
+                string available = (cpu ? "CPU " : "")
+                    + (cuda12 ? "CUDA12 " : "")
+                    + (cuda13 ? "CUDA13 " : "")
                     + (rocm ? "ROCm " : "") + (sycl ? "SYCL " : "") + (vulkan ? "Vulkan" : "");
                 lblStatus.Text = string.Format(L.T("ldf.status.selected"),
                     release.tag_name, available.Trim());
@@ -494,33 +504,36 @@ namespace ooor
         /// <summary>
         /// 在资产列表里找 zip 包：cudart=false 匹配 llama 主程序包（排除 cudart 前缀的运行库），
         /// cudart=true 匹配 CUDA 运行库包（cudart-llama-bin-win-cuda-…）。
+        /// cudaVersion 非 null 时额外要求文件名包含 "cuda-{ver}"（如 "cuda-12" / "cuda-13"），
+        /// 精确限定 CUDA 主版本，避免把 cuda-13 的包当成 cuda-12 的。
         /// 选优策略（llama.cpp 同时发 x64 / arm64 两份 Windows 桌面二进制）：
         ///   1) 优先选 x64 / amd64 / x86_64（Windows 桌面端默认架构）
         ///   2) 排除 arm64 / arm64ec（仅 ARM Windows 才需要；API 列表里通常排在 x64 之前，旧版
         ///      Contains("win-cpu") 会把 arm64 误中导致下到不能跑的二进制）
         ///   3) 实在没有 x64 时回退到非 arm64 的其他架构（兜底，目前不会出现）
         /// </summary>
-        private static GithubAsset FindAsset(List<GithubAsset> assets, string nameContains, bool cudart)
+        private static GithubAsset FindAsset(List<GithubAsset> assets, string nameContains, bool cudart, string cudaVersion = null)
         {
             if (assets == null) return null;
-            GithubAsset x64 = null;        // 首选：x64 / amd64 / x86_64
-            GithubAsset nonArm = null;     // 兜底：非 arm64 / 非 arm64ec 的其他架构
+            GithubAsset x64 = null;
+            GithubAsset nonArm = null;
             foreach (var a in assets)
             {
                 if (a == null || string.IsNullOrEmpty(a.name)) continue;
                 string n = a.name.ToLowerInvariant();
-                if (!n.EndsWith(".zip")) continue;               // 不支持 tar.gz
+                if (!n.EndsWith(".zip")) continue;
                 if (n.StartsWith("cudart") != cudart) continue;
                 if (!n.Contains(nameContains)) continue;
-                if (n.Contains("arm64")) continue;                // 排除 arm64 / arm64ec
+                if (cudaVersion != null && !n.Contains("cuda-" + cudaVersion)) continue;
+                if (n.Contains("arm64")) continue;
                 if (n.Contains("x64") || n.Contains("amd64") || n.Contains("x86_64"))
                 {
                     x64 = a;
-                    break;                                          // 命中首选立即停
+                    break;
                 }
                 if (nonArm == null) nonArm = a;
             }
-            return x64 ?? nonArm;   // 理论上 x64 一定命中（llama.cpp 当前总是同时发 x64）
+            return x64 ?? nonArm;
         }
 
         // ==================== 各版本下载按钮 ====================
@@ -550,33 +563,62 @@ namespace ooor
         }
 
         /// <summary>
-        /// CPU+CUDA：提交两个任务（主程序 + CUDA 运行库），队列按 FIFO 串行，
-        /// CUDA 运行库解压到 CPU 版本同一目录合并（llama-server 需要同目录 DLL）。
+        /// CUDA 12：提交两个任务（CUDA 12 主程序 + CUDA 12 运行库 DLL），
+        /// 均解压到 CUDA 12 主程序目录合并（llama-server 需要同目录 DLL）。
         /// </summary>
-        private void btnCpuCuda_Click(object sender, EventArgs e)
+        private void btnCuda12_Click(object sender, EventArgs e)
         {
             var release = SelectedRelease;
-            var cpu = FindAsset(release?.assets, "win-cpu", false);
-            var cuda = FindAsset(release?.assets, "win-cuda", true);
-            if (cpu == null || cuda == null) return;
+            var cudaMain = FindAsset(release?.assets, "win-cuda", false, "12");
+            var cudaDll = FindAsset(release?.assets, "win-cuda", true, "12");
+            if (cudaMain == null || cudaDll == null) return;
 
-            string cpuDir = ExtractDirFor(cpu);
+            string dir = ExtractDirFor(cudaMain);
 
-            // 确认清单：CPU 主程序 + CUDA 运行库（均解压到 CPU 目录）
             var plan = new List<LlamaInstallConfirmForm.Item>
             {
-                new LlamaInstallConfirmForm.Item(cpu.name, cpu.size, cpuDir),
-                new LlamaInstallConfirmForm.Item(cuda.name, cuda.size, cpuDir)
+                new LlamaInstallConfirmForm.Item(cudaMain.name, cudaMain.size, dir),
+                new LlamaInstallConfirmForm.Item(cudaDll.name, cudaDll.size, dir)
             };
-            if (LlamaInstallConfirmForm.Show(this, "CPU+CUDA", release.tag_name, plan) != DialogResult.OK)
+            if (LlamaInstallConfirmForm.Show(this, "CUDA 12", release.tag_name, plan) != DialogResult.OK)
             {
-                lblStatus.Text = string.Format(L.T("ldf.status.downloadCancelled"), "CPU+CUDA");
+                lblStatus.Text = string.Format(L.T("ldf.status.downloadCancelled"), "CUDA 12");
                 return;
             }
 
-            EnqueueAsset(release, cpu, cpuDir);
-            EnqueueAsset(release, cuda, cpuDir);   // CUDA 运行库解压进 CPU 目录
-            lblStatus.Text = string.Format(L.T("ldf.status.cpuCudaSubmitted"), cpuDir);
+            EnqueueAsset(release, cudaMain, dir);
+            EnqueueAsset(release, cudaDll, dir);
+            lblStatus.Text = string.Format(L.T("ldf.status.cuda12Submitted"), dir);
+            FileDownloadForm.ShowSingle();
+        }
+
+        /// <summary>
+        /// CUDA 13：提交两个任务（CUDA 13 主程序 + CUDA 13 运行库 DLL），
+        /// 均解压到 CUDA 13 主程序目录合并（llama-server 需要同目录 DLL）。
+        /// </summary>
+        private void btnCuda13_Click(object sender, EventArgs e)
+        {
+            var release = SelectedRelease;
+            var cudaMain = FindAsset(release?.assets, "win-cuda", false, "13");
+            var cudaDll = FindAsset(release?.assets, "win-cuda", true, "13");
+            if (cudaMain == null || cudaDll == null) return;
+
+            string dir = ExtractDirFor(cudaMain);
+
+            var plan = new List<LlamaInstallConfirmForm.Item>
+            {
+                new LlamaInstallConfirmForm.Item(cudaMain.name, cudaMain.size, dir),
+                new LlamaInstallConfirmForm.Item(cudaDll.name, cudaDll.size, dir)
+            };
+            if (LlamaInstallConfirmForm.Show(this, "CUDA 13", release.tag_name, plan) != DialogResult.OK)
+            {
+                lblStatus.Text = string.Format(L.T("ldf.status.downloadCancelled"), "CUDA 13");
+                return;
+            }
+
+            EnqueueAsset(release, cudaMain, dir);
+            EnqueueAsset(release, cudaDll, dir);
+            lblStatus.Text = string.Format(L.T("ldf.status.cuda13Submitted"), dir);
             FileDownloadForm.ShowSingle();
         }
 
