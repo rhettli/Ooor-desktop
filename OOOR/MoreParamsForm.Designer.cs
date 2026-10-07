@@ -23,6 +23,7 @@ namespace ooor
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MoreParamsForm));
             this.lblTip = new System.Windows.Forms.Label();
             this.listParams = new System.Windows.Forms.ListView();
             this.colParamName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -34,18 +35,25 @@ namespace ooor
             this.新建参数ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.编辑参数信息ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.删除参数ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.toolStripLabelFilter = new System.Windows.Forms.ToolStripLabel();
+            this.toolStripTextBoxFilter = new System.Windows.Forms.ToolStripTextBox();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripButtonHelp = new System.Windows.Forms.ToolStripButton();
             this.contextMenuStrip.SuspendLayout();
+            this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // lblTip
             // 
-            this.lblTip.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lblTip.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.lblTip.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblTip.ForeColor = System.Drawing.Color.Black;
-            this.lblTip.Location = new System.Drawing.Point(0, 0);
+            this.lblTip.Location = new System.Drawing.Point(0, 526);
+            this.lblTip.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lblTip.Name = "lblTip";
-            this.lblTip.Padding = new System.Windows.Forms.Padding(12, 0, 12, 0);
-            this.lblTip.Size = new System.Drawing.Size(1299, 44);
+            this.lblTip.Padding = new System.Windows.Forms.Padding(8, 0, 8, 0);
+            this.lblTip.Size = new System.Drawing.Size(866, 29);
             this.lblTip.TabIndex = 0;
             this.lblTip.Text = "双击参数行（或右击「修改值」）修改参数值；值为空 = 启动时不传该参数。主界面的上下文 / 预测 / GPU 层数 / 主机 / 端口不在此列。";
             this.lblTip.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -64,11 +72,12 @@ namespace ooor
             this.listParams.FullRowSelect = true;
             this.listParams.GridLines = true;
             this.listParams.HideSelection = false;
-            this.listParams.Location = new System.Drawing.Point(0, 44);
+            this.listParams.Location = new System.Drawing.Point(0, 27);
+            this.listParams.Margin = new System.Windows.Forms.Padding(2);
             this.listParams.MultiSelect = false;
             this.listParams.Name = "listParams";
             this.listParams.ShowItemToolTips = true;
-            this.listParams.Size = new System.Drawing.Size(1299, 787);
+            this.listParams.Size = new System.Drawing.Size(867, 497);
             this.listParams.TabIndex = 1;
             this.listParams.UseCompatibleStateImageBehavior = false;
             this.listParams.View = System.Windows.Forms.View.Details;
@@ -100,56 +109,101 @@ namespace ooor
             this.编辑参数信息ToolStripMenuItem,
             this.删除参数ToolStripMenuItem});
             this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(189, 130);
+            this.contextMenuStrip.Size = new System.Drawing.Size(149, 98);
             this.contextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.ContextMenuStrip_Opening);
             // 
             // menuEditValue
             // 
             this.menuEditValue.Name = "menuEditValue";
-            this.menuEditValue.Size = new System.Drawing.Size(188, 30);
+            this.menuEditValue.Size = new System.Drawing.Size(148, 22);
             this.menuEditValue.Text = "修改值";
             this.menuEditValue.Click += new System.EventHandler(this.MenuEditValue_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(185, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(145, 6);
             // 
             // 新建参数ToolStripMenuItem
             // 
             this.新建参数ToolStripMenuItem.Name = "新建参数ToolStripMenuItem";
-            this.新建参数ToolStripMenuItem.Size = new System.Drawing.Size(188, 30);
+            this.新建参数ToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.新建参数ToolStripMenuItem.Text = "新建参数";
             this.新建参数ToolStripMenuItem.Click += new System.EventHandler(this.MenuNewParam_Click);
             // 
             // 编辑参数信息ToolStripMenuItem
             // 
             this.编辑参数信息ToolStripMenuItem.Name = "编辑参数信息ToolStripMenuItem";
-            this.编辑参数信息ToolStripMenuItem.Size = new System.Drawing.Size(188, 30);
+            this.编辑参数信息ToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.编辑参数信息ToolStripMenuItem.Text = "编辑参数信息";
             this.编辑参数信息ToolStripMenuItem.Click += new System.EventHandler(this.MenuEditInfo_Click);
             // 
             // 删除参数ToolStripMenuItem
             // 
             this.删除参数ToolStripMenuItem.Name = "删除参数ToolStripMenuItem";
-            this.删除参数ToolStripMenuItem.Size = new System.Drawing.Size(188, 30);
+            this.删除参数ToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
             this.删除参数ToolStripMenuItem.Text = "删除参数";
             this.删除参数ToolStripMenuItem.Click += new System.EventHandler(this.MenuDeleteParam_Click);
             // 
+            // toolStrip1
+            // 
+            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripLabelFilter,
+            this.toolStripTextBoxFilter,
+            this.toolStripSeparator2,
+            this.toolStripButtonHelp});
+            this.toolStrip1.Location = new System.Drawing.Point(0, 0);
+            this.toolStrip1.Name = "toolStrip1";
+            this.toolStrip1.Size = new System.Drawing.Size(866, 25);
+            this.toolStrip1.TabIndex = 3;
+            this.toolStrip1.Text = "toolStrip1";
+            // 
+            // toolStripLabelFilter
+            // 
+            this.toolStripLabelFilter.Name = "toolStripLabelFilter";
+            this.toolStripLabelFilter.Size = new System.Drawing.Size(44, 22);
+            this.toolStripLabelFilter.Text = "过滤：";
+            // 
+            // toolStripTextBoxFilter
+            // 
+            this.toolStripTextBoxFilter.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
+            this.toolStripTextBoxFilter.Name = "toolStripTextBoxFilter";
+            this.toolStripTextBoxFilter.Size = new System.Drawing.Size(100, 25);
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
+            // 
+            // toolStripButtonHelp
+            // 
+            this.toolStripButtonHelp.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.toolStripButtonHelp.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonHelp.Image")));
+            this.toolStripButtonHelp.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButtonHelp.Name = "toolStripButtonHelp";
+            this.toolStripButtonHelp.Size = new System.Drawing.Size(36, 22);
+            this.toolStripButtonHelp.Text = "帮助";
+            this.toolStripButtonHelp.ToolTipText = "帮助";
+            // 
             // MoreParamsForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1299, 833);
+            this.ClientSize = new System.Drawing.Size(866, 555);
+            this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.listParams);
             this.Controls.Add(this.lblTip);
-            this.MinimumSize = new System.Drawing.Size(640, 380);
+            this.Margin = new System.Windows.Forms.Padding(2);
+            this.MinimumSize = new System.Drawing.Size(432, 266);
             this.Name = "MoreParamsForm";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "更多参数";
             this.contextMenuStrip.ResumeLayout(false);
+            this.toolStrip1.ResumeLayout(false);
+            this.toolStrip1.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -166,5 +220,10 @@ namespace ooor
         private System.Windows.Forms.ToolStripMenuItem 编辑参数信息ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 删除参数ToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStrip toolStrip1;
+        private System.Windows.Forms.ToolStripButton toolStripButtonHelp;
+        private System.Windows.Forms.ToolStripTextBox toolStripTextBoxFilter;
+        private System.Windows.Forms.ToolStripLabel toolStripLabelFilter;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
     }
 }

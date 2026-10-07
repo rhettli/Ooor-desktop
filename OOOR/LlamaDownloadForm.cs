@@ -105,6 +105,37 @@ namespace ooor
             // 镜像源下拉：默认 GitHub；切换后绕过缓存重新拉取
             cmbMirror.SelectedIndex = (int)Mirror.Github;
             cmbMirror.SelectedIndexChanged += cmbMirror_SelectedIndexChanged;
+
+            // 「查看安装帮助」链接样式标签：下划线 + 悬停变红 + 点击弹出帮助窗口
+            label1.Font = new System.Drawing.Font(label1.Font, System.Drawing.FontStyle.Underline);
+            label1.Click += (s, e) => ShowInstallHelp();
+            label1.MouseEnter += (s, e) => label1.ForeColor = System.Drawing.Color.Red;
+            label1.MouseLeave += (s, e) => label1.ForeColor = System.Drawing.Color.RoyalBlue;
+        }
+
+        /// <summary>弹出「安装帮助」窗口（内含一个说明 Label）</summary>
+        private void ShowInstallHelp()
+        {
+            using (var dlg = new Form
+            {
+                Text = L.T("ldf.help.title"),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                ShowInTaskbar = false,
+                ClientSize = new System.Drawing.Size(380, 80)
+            })
+            {
+                dlg.Controls.Add(new Label
+                {
+                    Dock = DockStyle.Fill,
+                    Text = L.T("ldf.help.text"),
+                    TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
+                    Padding = new Padding(12)
+                });
+                dlg.ShowDialog(this);
+            }
         }
 
         /// <summary>按当前语言刷新窗口静态文本（标题、工具栏、安装按钮、遮罩等）</summary>
@@ -125,6 +156,9 @@ namespace ooor
             button5.Text = L.T("ldf.btn.rocm");
             button4.Text = L.T("ldf.btn.sycl");
             button2.Text = L.T("ldf.btn.vulkan");
+
+            // 「查看安装帮助」链接
+            label1.Text = L.T("ldf.help.link");
 
             // 动态创建的「请稍等」遮罩与初始状态栏文本
             if (_lblButtonsLoading != null) _lblButtonsLoading.Text = L.T("ldf.loading.wait");

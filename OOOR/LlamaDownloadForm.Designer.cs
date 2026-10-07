@@ -16,6 +16,7 @@ namespace ooor
         {
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.lstVersions = new System.Windows.Forms.ListBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.label_ok_cpu = new System.Windows.Forms.Label();
             this.label_ok_cudacuda = new System.Windows.Forms.Label();
             this.label_ok_cuda13 = new System.Windows.Forms.Label();
@@ -52,7 +53,7 @@ namespace ooor
             | System.Windows.Forms.AnchorStyles.Right)));
             this.splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
             this.splitContainer1.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.splitContainer1.Margin = new System.Windows.Forms.Padding(2);
             this.splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -62,6 +63,7 @@ namespace ooor
             // 
             // splitContainer1.Panel2
             // 
+            this.splitContainer1.Panel2.Controls.Add(this.label1);
             this.splitContainer1.Panel2.Controls.Add(this.label_ok_cpu);
             this.splitContainer1.Panel2.Controls.Add(this.label_ok_cudacuda);
             this.splitContainer1.Panel2.Controls.Add(this.label_ok_cuda13);
@@ -91,6 +93,18 @@ namespace ooor
             this.lstVersions.Size = new System.Drawing.Size(260, 373);
             this.lstVersions.TabIndex = 0;
             this.lstVersions.SelectedIndexChanged += new System.EventHandler(this.lstVersions_SelectedIndexChanged);
+            // 
+            // label1
+            // 
+            this.label1.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.label1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label1.ForeColor = System.Drawing.Color.RoyalBlue;
+            this.label1.Location = new System.Drawing.Point(62, 342);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(201, 18);
+            this.label1.TabIndex = 14;
+            this.label1.Text = "查看安装帮助";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // label_ok_cpu
             // 
@@ -173,17 +187,17 @@ namespace ooor
             // button5
             // 
             this.button5.Location = new System.Drawing.Point(62, 200);
-            this.button5.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.button5.Margin = new System.Windows.Forms.Padding(2);
             this.button5.Name = "button5";
             this.button5.Size = new System.Drawing.Size(201, 28);
             this.button5.TabIndex = 6;
-            this.button5.Text = "安装ROCm版本";
+            this.button5.Text = "安装ROCm版本（AMD显卡）";
             this.button5.UseVisualStyleBackColor = true;
             // 
             // button4
             // 
             this.button4.Location = new System.Drawing.Point(62, 242);
-            this.button4.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.button4.Margin = new System.Windows.Forms.Padding(2);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(201, 28);
             this.button4.TabIndex = 5;
@@ -251,27 +265,27 @@ namespace ooor
             // button3
             // 
             this.button3.Location = new System.Drawing.Point(62, 116);
-            this.button3.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.button3.Margin = new System.Windows.Forms.Padding(2);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(201, 28);
             this.button3.TabIndex = 4;
-            this.button3.Text = "安装CUDA 12版本";
+            this.button3.Text = "安装CUDA 12版本（RTX显卡）";
             this.button3.UseVisualStyleBackColor = true;
             // 
             // button6
             // 
             this.button6.Location = new System.Drawing.Point(62, 159);
-            this.button6.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.button6.Margin = new System.Windows.Forms.Padding(2);
             this.button6.Name = "button6";
             this.button6.Size = new System.Drawing.Size(201, 28);
             this.button6.TabIndex = 13;
-            this.button6.Text = "安装CUDA 13版本";
+            this.button6.Text = "安装CUDA 13版本（RTX显卡）";
             this.button6.UseVisualStyleBackColor = true;
             // 
             // button2
             // 
             this.button2.Location = new System.Drawing.Point(62, 287);
-            this.button2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.button2.Margin = new System.Windows.Forms.Padding(2);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(201, 28);
             this.button2.TabIndex = 3;
@@ -281,7 +295,7 @@ namespace ooor
             // button1
             // 
             this.button1.Location = new System.Drawing.Point(62, 71);
-            this.button1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.button1.Margin = new System.Windows.Forms.Padding(2);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(201, 28);
             this.button1.TabIndex = 2;
@@ -357,5 +371,6 @@ namespace ooor
         private System.Windows.Forms.Label label_ok_rocm;
         private System.Windows.Forms.Label label_ok_sycl;
         private System.Windows.Forms.Label label_ok_vulkan;
+        private System.Windows.Forms.Label label1;
     }
 }

@@ -20,6 +20,7 @@ namespace ooor
         public MoreParamsForm()
         {
             InitializeComponent();
+            toolStripTextBoxFilter.TextChanged += (s, e) => ReloadList();
             ReloadList();
         }
 
@@ -348,6 +349,8 @@ namespace ooor
         private void ReloadList()
         {
             var values = ServerParams.LoadValues();
+            string filter = (toolStripTextBoxFilter.Text ?? "").Trim().ToLowerInvariant();
+            bool hasFilter = filter.Length > 0;
 
             listParams.BeginUpdate();
             try
@@ -359,6 +362,15 @@ namespace ooor
                     values.TryGetValue(p.Name, out value);
                     bool set = !string.IsNullOrEmpty(value);
 
+                    if (hasFilter)
+                    {
+                        string v = (value ?? "").ToLowerInvariant();
+                        string d = ParamDesc(p).ToLowerInvariant();
+                        string n = p.Name.ToLowerInvariant();
+                        if (!n.Contains(filter) && !v.Contains(filter) && !d.Contains(filter))
+                            continue;
+                    }
+
                     var item = new ListViewItem(p.Name)
                     {
                         UseItemStyleForSubItems = true,
@@ -366,7 +378,12 @@ namespace ooor
                         ToolTipText = ParamDesc(p)
                     };
 
-                    if (!set)
+                    if (hasFilter)
+                    {
+                        item.ForeColor = Color.DodgerBlue;
+                        item.Font = new Font(listParams.Font, FontStyle.Bold);
+                    }
+                    else if (!set)
                     {
                         item.ForeColor = Color.Black;
                     }

@@ -433,6 +433,9 @@
   "ldf.status.cuda12Submitted": "已提交 2 个任务（CUDA 12 主程序 + CUDA 运行库 DLL），均解压到 {0}，进度见下载任务管理器。",
   "ldf.status.cuda13Submitted": "已提交 2 个任务（CUDA 13 主程序 + CUDA 运行库 DLL），均解压到 {0}，进度见下载任务管理器。",
   "ldf.status.taskSubmitted": "已提交 {0} 版本下载任务，解压到 {1}。",
+  "ldf.help.link": "查看安装帮助",
+  "ldf.help.title": "安装帮助",
+  "ldf.help.text": "0.0041版本之前的，请重新安装cuda版本，12版本对应老的TX显卡，13版本对应新的RTX显卡，没有独立显卡使用cpu版本，有amd显卡使用RoCm版本",
 
   "prof.title": "参数方案管理",
   "prof.btn.new": "新建",

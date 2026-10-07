@@ -433,6 +433,9 @@
   "ldf.status.cuda12Submitted": "Submitted 2 tasks (CUDA 12 main package + CUDA runtime DLLs); both will be extracted to {0}. See the Download Manager for progress.",
   "ldf.status.cuda13Submitted": "Submitted 2 tasks (CUDA 13 main package + CUDA runtime DLLs); both will be extracted to {0}. See the Download Manager for progress.",
   "ldf.status.taskSubmitted": "{0} build download task submitted; it will be extracted to {1}.",
+  "ldf.help.link": "View Installation Help",
+  "ldf.help.title": "Installation Help",
+  "ldf.help.text": "For versions before 0.0041, please reinstall the CUDA build. CUDA 12 is for older GTX graphics cards; CUDA 13 is for newer RTX graphics cards. Use the CPU build if you have no dedicated GPU, or the ROCm build for AMD graphics cards.",
 
   "prof.title": "Profile Manager",
   "prof.btn.new": "New",
