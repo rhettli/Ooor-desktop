@@ -12,11 +12,11 @@ namespace OoorFunc.Core
     ///   allow_command=true|false    是否注册执行类工具（run_command / execute_script）
     ///   trust_ai=true|false         危险操作是否允许模型自行判断跳过确认（工具参数 confirm=false 时生效）
     ///   allow_internet=true|false   是否注册联网工具（web_search / fetch_url / download_file）
-    ///   root=D:\xxx                 额外沙盒白名单目录（可多行，累加到内置的 models / config 之上）
     ///   max_steps=12                单轮最大步数
     ///
-    /// 保存策略：AgentOptions.Default() 会先铺内置目录，再 Load 本文件覆盖开关并追加 root；
-    /// UI 改动开关/沙盒后调用 Save(opt) 落盘，因此「AI 助手」窗口重开后行为保持一致。
+    /// 注意：白名单「跟 agent 走」——沙盒白名单目录不再走 agent.conf 持久化，
+    /// 文件里残留的 root= 行将被忽略。新建/修改 Agent 时由 OOOR 主程序把白名单落到 LiteDB
+    /// 的 agents 集合（AgentRecord.WriteDirs），CLI 启动时按 --agent 加载并灌进 AllowedRoots。
     /// </summary>
     public static class AgentSettings
     {
@@ -39,8 +39,6 @@ namespace OoorFunc.Core
             try
             {
                 if (!File.Exists(SettingsPath)) return;
-                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (string r in opt.AllowedRoots) seen.Add(Normalize(r));
 
                 foreach (string raw in File.ReadAllLines(SettingsPath, Encoding.UTF8))
                 {
@@ -64,19 +62,14 @@ namespace OoorFunc.Core
                                 if (int.TryParse(val, out v) && v >= 1 && v <= 64) opt.MaxSteps = v;
                                 break;
                             }
-                        case "root":
-                            {
-                                string p = Normalize(val);
-                                if (p.Length > 0 && seen.Add(p)) opt.AllowedRoots.Add(p);
-                                break;
-                            }
+                            // root= 行：白名单跟 agent 走，已不再追加到 AllowedRoots（兼容忽略）
                     }
                 }
             }
             catch { /* 配置损坏时按内存默认值继续，不影响使用 */ }
         }
 
-        /// <summary>把 opt 的当前开关 + 全部沙盒目录写回 agent.conf。</summary>
+        /// <summary>把 opt 的当前开关写回 agent.conf（不再写白名单，由 agent 自身管）。</summary>
         public static void Save(AgentOptions opt)
         {
             if (opt == null) return;
@@ -84,18 +77,13 @@ namespace OoorFunc.Core
             {
                 Directory.CreateDirectory(CoreEnv.ConfigRoot);
                 var sb = new StringBuilder();
-                sb.AppendLine("# ooor AI 助手设置（工具权限 / 沙盒白名单）");
-                sb.AppendLine("# root 行可多行，均为绝对路径；越出白名单的读写会被直接拒绝");
+                sb.AppendLine("# ooor AI 助手设置（工具权限）");
+                sb.AppendLine("# 沙盒白名单目录不在这里配置，请到「模型对话 → Agent 管理」里配 Agent 的白名单");
                 sb.AppendLine("allow_write=" + (opt.AllowWrite ? "true" : "false"));
                 sb.AppendLine("allow_command=" + (opt.AllowCommand ? "true" : "false"));
                 sb.AppendLine("trust_ai=" + (opt.TrustAiJudgment ? "true" : "false"));
                 sb.AppendLine("allow_internet=" + (opt.AllowInternet ? "true" : "false"));
                 sb.AppendLine("max_steps=" + opt.MaxSteps);
-                foreach (string r in opt.AllowedRoots)
-                {
-                    string p = Normalize(r);
-                    if (p.Length > 0) sb.AppendLine("root=" + p);
-                }
                 File.WriteAllText(SettingsPath, sb.ToString(), new UTF8Encoding(false));
             }
             catch { /* 落盘失败不影响本次会话 */ }

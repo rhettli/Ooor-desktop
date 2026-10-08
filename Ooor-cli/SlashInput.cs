@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 using OoorFunc.Core;
 
 namespace Ooor_cli
@@ -24,7 +25,9 @@ namespace Ooor_cli
     /// </summary>
     internal static class SlashInput
     {
-        private enum MenuMode { None, Commands, Agents, Sessions, Files }
+        // FileRoots：/file 进入后第一层菜单；首项是「选择文件」（弹系统对话框），后面是白名单根目录。
+        // FilePick：选中某个根目录后进入该目录的二级菜单；继续向下深入目录或选中文件执行 CmdFile。
+        private enum MenuMode { None, Commands, Agents, Sessions, FileRoots, FilePick }
 
         private sealed class MenuItem
         {
@@ -61,7 +64,9 @@ namespace Ooor_cli
 
             MenuMode mode = MenuMode.None;
             var items = new List<MenuItem>();
-            var filePool = new List<MenuItem>();   // /file 子菜单的候选池（进入该模式时只枚举一次，之后内存过滤）
+            var fileRootPool = new List<MenuItem>();   // /file 首层候选池：「选择文件」+ AllowedRoots，进入该模式时只枚举一次
+            var filePickPool = new List<MenuItem>();   // /file 子层候选池：当前根目录下的子目录+文件，进入新目录时重置
+            string currentDir = "";                    // FilePick 模式下的当前目录完整路径（决定 filePickPool 的内容）
             int sel = 0;
             string filterKey = null;
 
@@ -124,7 +129,7 @@ namespace Ooor_cli
                                 }
                                 ErasePopup(col, wraps, startCol, items);
                                 SetBuffer(buf, it.Payload, width, startCol, ref col, ref wraps);
-                                RefreshMenu(buf, opt, ref mode, items, filePool, ref sel, ref filterKey);
+                                RefreshMenu(buf, opt, ref mode, items, fileRootPool, filePickPool, ref currentDir, ref sel, ref filterKey);
                                 DrawPopup(col, wraps, startCol, items, sel);
                                 continue;
                             }
@@ -143,12 +148,75 @@ namespace Ooor_cli
                                 Console.WriteLine();
                                 return "/talk " + it.Payload;
                             }
-                            if (mode == MenuMode.Files)
+                            if (mode == MenuMode.FileRoots)
                             {
-                                // 文件：把完整路径插入输入行，回到普通编辑
+                                // 首层菜单：选「添加目录白名单」→ 弹目录选择对话框，加白名单后自动切 FilePick
+                                // 选根目录 → 把 /file "<root>" 写回输入行，RefreshMenu 会自动切到 FilePick
+                                if (it.Payload == FileBrowseMarker)
+                                {
+                                    ErasePopup(col, wraps, startCol, items);
+                                    string picked = BrowseForDirectory();
+                                    if (!string.IsNullOrEmpty(picked))
+                                    {
+                                        // 规范化 + 判重后写进 AllowedRoots
+                                        try
+                                        {
+                                            string full = Path.GetFullPath(picked).TrimEnd('\\', '/');
+                                            bool dup = false;
+                                            try { dup = opt.AllowedRoots.Any(r => string.Equals(Path.GetFullPath(r).TrimEnd('\\', '/'), full, StringComparison.OrdinalIgnoreCase)); }
+                                            catch { dup = false; }
+                                            if (!dup) opt.AllowedRoots.Add(full);
+
+                                            // 把选中目录作为 /file "<dir>" 写回输入行，并主动切到 FilePick 模式让用户下钻
+                                            currentDir = full;
+                                            filePickPool.Clear();
+                                            LoadFilePick(filePickPool, currentDir, "");
+                                            string ins = "/file " + (full.Contains(" ") ? "\"" + full + "\"" : full);
+                                            SetBuffer(buf, ins, width, startCol, ref col, ref wraps);
+                                            mode = MenuMode.FilePick;
+                                            filterKey = null;   // 让 RefreshMenu 重画时 sel 归零
+                                            items.Clear();
+                                            FilterFilePick(filePickPool, items, "");
+                                            sel = 0;
+                                            DrawPopup(col, wraps, startCol, items, sel);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            CliUi.Error(CliLang.Tf("dirBrowseFail", ex.Message));
+                                            mode = MenuMode.None; items.Clear();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        mode = MenuMode.None; items.Clear();
+                                    }
+                                    continue;
+                                }
+                                // 选中某个根目录 → 把 /file "<root>" 写回输入行，RefreshMenu 会自动切到 FilePick
                                 ErasePopup(col, wraps, startCol, items);
-                                string ins = it.Payload.Contains(" ") ? "\"" + it.Payload + "\"" : it.Payload;
-                                SetBuffer(buf, ins, width, startCol, ref col, ref wraps);
+                                string ins2 = "/file " + (it.Payload.Contains(" ") ? "\"" + it.Payload + "\"" : it.Payload);
+                                SetBuffer(buf, ins2, width, startCol, ref col, ref wraps);
+                                RefreshMenu(buf, opt, ref mode, items, fileRootPool, filePickPool, ref currentDir, ref sel, ref filterKey);
+                                DrawPopup(col, wraps, startCol, items, sel);
+                                continue;
+                            }
+                            if (mode == MenuMode.FilePick)
+                            {
+                                // 子层菜单：选目录 → 继续深入；选文件 → 关闭菜单，回车后由 CmdFile 显示
+                                ErasePopup(col, wraps, startCol, items);
+                                string path = (it.Payload ?? "").Trim();
+                                if (Directory.Exists(path))
+                                {
+                                    // 进入下一层：/file "<dir>" 写回输入行 → RefreshMenu 自动重判 FilePick
+                                    string ins3 = "/file " + (path.Contains(" ") ? "\"" + path + "\"" : path);
+                                    SetBuffer(buf, ins3, width, startCol, ref col, ref wraps);
+                                    RefreshMenu(buf, opt, ref mode, items, fileRootPool, filePickPool, ref currentDir, ref sel, ref filterKey);
+                                    DrawPopup(col, wraps, startCol, items, sel);
+                                    continue;
+                                }
+                                // 文件：保留 /file "<file>" 在输入行，关闭菜单等用户回车
+                                string ins4 = "/file " + (path.Contains(" ") ? "\"" + path + "\"" : path);
+                                SetBuffer(buf, ins4, width, startCol, ref col, ref wraps);
                                 mode = MenuMode.None; items.Clear();
                                 continue;
                             }
@@ -165,7 +233,7 @@ namespace Ooor_cli
                         ErasePopup(col, wraps, startCol, items);
                         var it = items[sel];
                         SetBuffer(buf, it.Payload, width, startCol, ref col, ref wraps);
-                        RefreshMenu(buf, opt, ref mode, items, filePool, ref sel, ref filterKey);
+                        RefreshMenu(buf, opt, ref mode, items, fileRootPool, filePickPool, ref currentDir, ref sel, ref filterKey);
                         DrawPopup(col, wraps, startCol, items, sel);
                         continue;
                     }
@@ -175,7 +243,7 @@ namespace Ooor_cli
                     {
                         ErasePopup(col, wraps, startCol, items);
                         EraseLastChar(buf, startCol, ref col, ref wraps, width);
-                        RefreshMenu(buf, opt, ref mode, items, filePool, ref sel, ref filterKey);
+                        RefreshMenu(buf, opt, ref mode, items, fileRootPool, filePickPool, ref currentDir, ref sel, ref filterKey);
                         DrawPopup(col, wraps, startCol, items, sel);
                         continue;
                     }
@@ -207,7 +275,7 @@ namespace Ooor_cli
                         Console.Write(ch);
                         AdvanceCol(ch, width, startCol, ref col, ref wraps);
                     }
-                    RefreshMenu(buf, opt, ref mode, items, filePool, ref sel, ref filterKey);
+                    RefreshMenu(buf, opt, ref mode, items, fileRootPool, filePickPool, ref currentDir, ref sel, ref filterKey);
                     DrawPopup(col, wraps, startCol, items, sel);
                 }
             }
@@ -221,7 +289,9 @@ namespace Ooor_cli
 
         /// <summary>按当前输入文本决定菜单模式与候选项；模式或过滤词变化时重置选中项。</summary>
         private static void RefreshMenu(StringBuilder buf, AgentOptions opt,
-            ref MenuMode mode, List<MenuItem> items, List<MenuItem> filePool, ref int sel, ref string filterKey)
+            ref MenuMode mode, List<MenuItem> items,
+            List<MenuItem> fileRootPool, List<MenuItem> filePickPool,
+            ref string currentDir, ref int sel, ref string filterKey)
         {
             string text = buf.ToString();
             MenuMode newMode;
@@ -239,14 +309,55 @@ namespace Ooor_cli
 
                 if (token == "/agent") newMode = MenuMode.Agents;
                 else if (token == "/talk") newMode = MenuMode.Sessions;
-                else if (token == "/file") newMode = MenuMode.Files;
+                else if (token == "/file")
+                {
+                    // /file 子层菜单深入规则：
+                    //   - query 完全等于 AllowedRoots（含 TempDir） → FilePick，定位到该根目录
+                    //   - query 是 currentDir 的子路径（用于"选了根目录后继续输入子目录"）→ FilePick，currentDir 推进
+                    //   - query 为空或其它 → FileRoots 首层菜单
+                    if (string.IsNullOrEmpty(query))
+                    {
+                        newMode = MenuMode.FileRoots;
+                    }
+                    else
+                    {
+                        string matched = MatchAllowedRoot(query, opt);
+                        if (!string.IsNullOrEmpty(matched))
+                        {
+                            newMode = MenuMode.FilePick;
+                            if (!string.Equals(currentDir, matched, StringComparison.OrdinalIgnoreCase))
+                            {
+                                currentDir = matched;
+                                filePickPool.Clear();
+                                LoadFilePick(filePickPool, currentDir, "");
+                            }
+                        }
+                        else if (!string.IsNullOrEmpty(currentDir) && IsUnderDir(currentDir, query))
+                        {
+                            // 选了根目录后，用户接着敲子路径：继续深入 FilePick
+                            string sub;
+                            try { sub = Path.GetFullPath(query.Trim().Trim('"', '\'')).TrimEnd('\\', '/'); } catch { sub = query; }
+                            newMode = MenuMode.FilePick;
+                            if (!string.Equals(currentDir, sub, StringComparison.OrdinalIgnoreCase))
+                            {
+                                currentDir = sub;
+                                filePickPool.Clear();
+                                LoadFilePick(filePickPool, currentDir, "");
+                            }
+                        }
+                        else
+                        {
+                            newMode = MenuMode.FileRoots;
+                        }
+                    }
+                }
                 else if (sp < 0) newMode = MenuMode.Commands;   // / 前缀（含 /clear /help 完整词）
                 else newMode = MenuMode.None;
             }
 
             string key = newMode + "|" + query;
             bool changed = newMode != mode || key != filterKey;
-            bool enteredFiles = newMode == MenuMode.Files && mode != MenuMode.Files;
+            bool enteredFiles = (newMode == MenuMode.FileRoots && mode != MenuMode.FileRoots);
             mode = newMode;
             filterKey = key;
 
@@ -260,13 +371,17 @@ namespace Ooor_cli
                     break;
                 case MenuMode.Agents: LoadAgents(items, query); break;
                 case MenuMode.Sessions: LoadSessions(items, query); break;
-                case MenuMode.Files:
-                    if (enteredFiles || filePool.Count == 0)
+                case MenuMode.FileRoots:
+                    // 进入或 pool 为空时重建一次，之后内存过滤
+                    if (enteredFiles || fileRootPool.Count == 0)
                     {
-                        filePool.Clear();
-                        LoadFiles(filePool, "", opt);
+                        fileRootPool.Clear();
+                        LoadFileRoots(fileRootPool, opt);
                     }
-                    FilterFiles(filePool, items, query);
+                    FilterFileRoots(fileRootPool, items, query);
+                    break;
+                case MenuMode.FilePick:
+                    FilterFilePick(filePickPool, items, query);
                     break;
             }
             if (changed) sel = 0;
@@ -309,41 +424,83 @@ namespace Ooor_cli
             }
         }
 
-        /// <summary>枚举 TempDir 与沙盒白名单根目录下的文件（一层），填充候选池；query 必须传 ""。</summary>
-        private static void LoadFiles(List<MenuItem> pool, string query, AgentOptions opt)
+        /// <summary>/file 首层菜单的特殊 Payload：用户选了「选择文件」项，弹系统对话框。</summary>
+        private const string FileBrowseMarker = "__pick_file__";
+
+        /// <summary>枚举沙盒白名单 + TempDir 下的根目录；首项固定为「添加目录白名单」（弹目录选择对话框）。</summary>
+        private static void LoadFileRoots(List<MenuItem> pool, AgentOptions opt)
         {
+            // 首项固定：选完弹 FolderBrowserDialog，把目录加到 AllowedRoots 并自动进入子层下钻
+            pool.Add(new MenuItem
+            {
+                Label = CliLang.T("cmd.fileAddRoot"),
+                Hint = CliLang.T("cmd.fileAddRootHint"),
+                Payload = FileBrowseMarker
+            });
+
             var dirs = new List<string>();
             try { if (!string.IsNullOrEmpty(opt.TempDir)) dirs.Add(opt.TempDir); } catch { }
             try { if (opt.AllowedRoots != null) dirs.AddRange(opt.AllowedRoots); } catch { }
 
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var files = new List<FileInfo>();
             foreach (var d in dirs.Distinct())
             {
-                string dir;
-                try { dir = Path.GetFullPath(d); } catch { continue; }
-                if (!seen.Add(dir)) continue;
-                try
-                {
-                    if (!Directory.Exists(dir)) continue;
-                    files.AddRange(new DirectoryInfo(dir).GetFiles());
-                }
-                catch { }
-            }
-
-            foreach (var f in files.OrderByDescending(f => f.LastWriteTime).Take(200))
-            {
-                pool.Add(new MenuItem
-                {
-                    Label = f.Name,
-                    Hint = f.DirectoryName ?? "",
-                    Payload = f.FullName
-                });
+                string full;
+                try { full = Path.GetFullPath(d).TrimEnd('\\', '/'); } catch { continue; }
+                if (full.Length == 0 || !seen.Add(full)) continue;
+                string name = new DirectoryInfo(full).Name;
+                if (string.IsNullOrEmpty(name)) name = full;
+                pool.Add(new MenuItem { Label = name, Hint = full, Payload = full });
             }
         }
 
-        /// <summary>从候选池中按文件名/路径子串过滤（不区分大小写），最多取 60 项。</summary>
-        private static void FilterFiles(List<MenuItem> pool, List<MenuItem> items, string query)
+        /// <summary>首层菜单按子串过滤（不区分大小写）：Label 或 Payload 命中即可，最多 60 项。</summary>
+        private static void FilterFileRoots(List<MenuItem> pool, List<MenuItem> items, string query)
+        {
+            // 首项「选择文件」始终保留（即便路径为空也不隐藏）
+            int keepBrowse = 0;
+            foreach (var p in pool)
+            {
+                if (p.Payload == FileBrowseMarker)
+                {
+                    items.Add(p);
+                    keepBrowse = 1;
+                    break;
+                }
+            }
+            foreach (var p in pool)
+            {
+                if (p.Payload == FileBrowseMarker) continue;
+                if (!string.IsNullOrEmpty(query) &&
+                    p.Label.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0 &&
+                    p.Payload.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                items.Add(p);
+                if (items.Count >= 60 + keepBrowse) break;
+            }
+        }
+
+        /// <summary>/file 子层菜单：列出当前目录的子目录 + 文件（子目录标 "/" 便于区分）。</summary>
+        private static void LoadFilePick(List<MenuItem> pool, string root, string query)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return;
+                var dir = new DirectoryInfo(root);
+                var subDirs = new List<DirectoryInfo>();
+                try { subDirs.AddRange(dir.GetDirectories()); } catch { }
+                foreach (var sd in subDirs.OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
+                    pool.Add(new MenuItem { Label = sd.Name + "/", Hint = sd.FullName, Payload = sd.FullName });
+
+                var files = new List<FileInfo>();
+                try { files.AddRange(dir.GetFiles()); } catch { }
+                foreach (var f in files.OrderByDescending(f => f.LastWriteTime).Take(500))
+                    pool.Add(new MenuItem { Label = f.Name, Hint = f.DirectoryName ?? "", Payload = f.FullName });
+            }
+            catch { }
+        }
+
+        /// <summary>子层菜单按子串过滤：Label 或 Payload 命中，最多 200 项。</summary>
+        private static void FilterFilePick(List<MenuItem> pool, List<MenuItem> items, string query)
         {
             foreach (var p in pool)
             {
@@ -351,8 +508,105 @@ namespace Ooor_cli
                     p.Label.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0 &&
                     p.Payload.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0) continue;
                 items.Add(p);
-                if (items.Count >= 60) break;
+                if (items.Count >= 200) break;
             }
+        }
+
+        /// <summary>把 query 与 AllowedRoots + TempDir 精确匹配（去掉可能的引号/末尾分隔符），命中返回完整路径。</summary>
+        private static string MatchAllowedRoot(string query, AgentOptions opt)
+        {
+            if (string.IsNullOrEmpty(query)) return null;
+            string trimmed = query.Trim().Trim('"', '\'').TrimEnd('\\', '/');
+            if (trimmed.Length == 0) return null;
+            string fullQ;
+            try { fullQ = Path.GetFullPath(trimmed); } catch { fullQ = trimmed; }
+
+            var dirs = new List<string>();
+            try { if (!string.IsNullOrEmpty(opt.TempDir)) dirs.Add(opt.TempDir); } catch { }
+            try { if (opt.AllowedRoots != null) dirs.AddRange(opt.AllowedRoots); } catch { }
+
+            foreach (var d in dirs.Distinct())
+            {
+                try
+                {
+                    string full = Path.GetFullPath(d).TrimEnd('\\', '/');
+                    if (string.Equals(full, fullQ.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase))
+                        return full;
+                }
+                catch { }
+            }
+            return null;
+        }
+
+        /// <summary>判断 query 解析后的路径是否在 parent 目录下（含 parent 自身）。</summary>
+        private static bool IsUnderDir(string parent, string query)
+        {
+            if (string.IsNullOrEmpty(parent) || string.IsNullOrEmpty(query)) return false;
+            string fullParent;
+            string fullQ;
+            try { fullParent = Path.GetFullPath(parent).TrimEnd('\\', '/'); }
+            catch { return false; }
+            try { fullQ = Path.GetFullPath(query.Trim().Trim('"', '\'')).TrimEnd('\\', '/'); }
+            catch { return false; }
+            if (fullQ.Length < fullParent.Length) return false;
+            if (string.Equals(fullQ, fullParent, StringComparison.OrdinalIgnoreCase)) return true;
+            if (!fullQ.StartsWith(fullParent + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) return false;
+            // 兜底再校验 parent 必须真实存在且是目录
+            try { return Directory.Exists(fullParent); } catch { return false; }
+        }
+
+        /// <summary>弹 FolderBrowserDialog 让用户从文件系统选目录；返回完整路径，失败/取消返回 null。</summary>
+        private static string BrowseForDirectory()
+        {
+            try
+            {
+                using (var dlg = new FolderBrowserDialog())
+                {
+                    dlg.Description = CliLang.T("cmd.fileAddRoot");
+                    dlg.ShowNewFolderButton = false;     // 白名单只接受已存在目录，避免误建垃圾目录
+                    string lastDir = TryLoadBrowseLastDir();
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(lastDir) && Directory.Exists(lastDir))
+                            dlg.SelectedPath = lastDir;
+                    }
+                    catch { }
+                    if (dlg.ShowDialog() != DialogResult.OK) return null;
+                    string path = dlg.SelectedPath;
+                    if (string.IsNullOrEmpty(path)) return null;
+                    TrySaveBrowseLastDir(path);
+                    return path;
+                }
+            }
+            catch (Exception ex)
+            {
+                CliUi.Error(CliLang.Tf("dirBrowseFail", ex.Message));
+                return null;
+            }
+        }
+
+        /// <summary>记住上次 OpenFileDialog 打开的目录，下次默认进同一处。写到 app.conf 同目录的 browse_last.conf。</summary>
+        private static string TryLoadBrowseLastDir()
+        {
+            try
+            {
+                string path = Path.Combine(CoreEnv.ConfigRoot, "browse_last.conf");
+                if (!File.Exists(path)) return null;
+                string dir = File.ReadAllText(path).Trim();
+                return Directory.Exists(dir) ? dir : null;
+            }
+            catch { return null; }
+        }
+
+        private static void TrySaveBrowseLastDir(string dir)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(dir)) return;
+                Directory.CreateDirectory(CoreEnv.ConfigRoot);
+                File.WriteAllText(Path.Combine(CoreEnv.ConfigRoot, "browse_last.conf"), dir);
+            }
+            catch { }
         }
 
         // ===================== 菜单绘制 =====================

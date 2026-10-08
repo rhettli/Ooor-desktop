@@ -45,6 +45,9 @@ namespace ooor
             this.cmsWriteDir = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.tsmiAddDir = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiRemoveDir = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.tsmiLocateDir = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiCopyDir = new System.Windows.Forms.ToolStripMenuItem();
             this.cmsWriteDir.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -216,9 +219,12 @@ namespace ooor
             // 
             this.cmsWriteDir.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsmiAddDir,
-            this.tsmiRemoveDir});
+            this.tsmiRemoveDir,
+            this.toolStripSeparator1,
+            this.tsmiLocateDir,
+            this.tsmiCopyDir});
             this.cmsWriteDir.Name = "cmsWriteDir";
-            this.cmsWriteDir.Size = new System.Drawing.Size(111, 48);
+            this.cmsWriteDir.Size = new System.Drawing.Size(111, 92);
             // 
             // tsmiAddDir
             // 
@@ -231,6 +237,23 @@ namespace ooor
             this.tsmiRemoveDir.Name = "tsmiRemoveDir";
             this.tsmiRemoveDir.Size = new System.Drawing.Size(110, 22);
             this.tsmiRemoveDir.Text = "移除";
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(107, 6);
+            // 
+            // tsmiLocateDir
+            // 
+            this.tsmiLocateDir.Name = "tsmiLocateDir";
+            this.tsmiLocateDir.Size = new System.Drawing.Size(110, 22);
+            this.tsmiLocateDir.Text = "定位…";
+            // 
+            // tsmiCopyDir
+            // 
+            this.tsmiCopyDir.Name = "tsmiCopyDir";
+            this.tsmiCopyDir.Size = new System.Drawing.Size(110, 22);
+            this.tsmiCopyDir.Text = "复制路径";
             // 
             // AgentEditForm
             // 
@@ -292,6 +315,9 @@ namespace ooor
         private System.Windows.Forms.ContextMenuStrip cmsWriteDir;
         private System.Windows.Forms.ToolStripMenuItem tsmiAddDir;
         private System.Windows.Forms.ToolStripMenuItem tsmiRemoveDir;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripMenuItem tsmiLocateDir;
+        private System.Windows.Forms.ToolStripMenuItem tsmiCopyDir;
         private System.Windows.Forms.ColumnHeader columnHeader1;
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using ooor.Controls;
 using ooor.Core;
@@ -22,6 +23,9 @@ namespace ooor
 
         private int _selectedIndex = -1;
         private ChatRecord _contextRecord;   // 右键菜单针对的记录
+
+        /// <summary>主菜单「继续聊」传入：按 Agent 名称预过滤；null/空 = 不过滤（显示全部历史）。</summary>
+        public string PrefilterAgentName { get; set; }
 
         public ConsoleChatRecord()
         {
@@ -89,6 +93,11 @@ namespace ooor
                 _selectedIndex = -1;
 
                 var records = ChatStore.All();
+                if (!string.IsNullOrEmpty(PrefilterAgentName))
+                {
+                    string p = PrefilterAgentName.Trim();
+                    records = records.Where(r => string.Equals(r.Agent ?? "", p, StringComparison.OrdinalIgnoreCase)).ToList();
+                }
                 int idx = 0;
                 foreach (var c in records)
                 {
@@ -103,8 +112,15 @@ namespace ooor
                     idx++;
                 }
 
-                // 空列表占位
-                if (idx == 0) panelRows.Controls.Add(lblEmpty);
+                // 空列表占位（预选 Agent 时换一条文案，避免用户困惑）
+                if (idx == 0)
+                {
+                    string emptyText = !string.IsNullOrEmpty(PrefilterAgentName)
+                        ? L.T("ccr.continue.empty")
+                        : L.T("ccr.empty");
+                    if (lblEmpty.Text != emptyText) lblEmpty.Text = emptyText;
+                    panelRows.Controls.Add(lblEmpty);
+                }
             }
             finally { panelRows.ResumeLayout(true); }
             ReflowRowWidths();

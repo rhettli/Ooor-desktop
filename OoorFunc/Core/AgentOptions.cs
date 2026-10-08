@@ -114,33 +114,19 @@ namespace OoorFunc.Core
         /// <summary>联网工具（web_search / fetch_url）单次请求超时。</summary>
         public TimeSpan WebTimeout = TimeSpan.FromSeconds(20);
 
-        /// <summary>构造一份默认配置：只读 + 沙盒为内置 models 目录 + 配置根目录。</summary>
+        /// <summary>
+        /// 构造一份默认配置：只读 + 沙盒白名单留空。
+        ///
+        /// 「白名单跟 agent 走」：不再在全局层面预置 models / config / agent.conf 里的 root= 行。
+        /// CLI 启动时根据 --agent 参数加载 AgentInfo.WriteDirs 灌进 AllowedRoots；
+        /// 未指定 agent（裸启 Ooor-cli）时沙盒为空，模型读写工具调用都会被「路径越权」拒绝，
+        /// 提示用户去「模型对话 → Agent 管理」里配白名单。
+        /// </summary>
         public static AgentOptions Default()
         {
-            var roots = new List<string>();
-            try
-            {
-                string models = CoreEnv.ModelsDir;
-                if (!string.IsNullOrEmpty(models)) roots.Add(models);
-            }
-            catch { }
-            try
-            {
-                string cfg = CoreEnv.ConfigRoot;
-                if (!string.IsNullOrEmpty(cfg)) roots.Add(cfg);
-            }
-            catch { }
-            // 规范化去重
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < roots.Count; )
-            {
-                string n = NormalizeFullPath(roots[i]);
-                if (n.Length == 0 || !seen.Add(n)) roots.RemoveAt(i);
-                else { roots[i] = n; i++; }
-            }
-
-            var opt = new AgentOptions { AllowedRoots = roots };
-            // 用户上次在「AI 助手」窗口里的开关与追加的沙盒目录（agent.conf）
+            var opt = new AgentOptions { AllowedRoots = new List<string>() };
+            // agent.conf 里的 AllowCommand / AllowInternet / TrustAiJudgment / MaxSteps 等开关仍读；
+            // root= 行已不再追加（白名单完全归 agent 管）。
             AgentSettings.Load(opt);
             return opt;
         }

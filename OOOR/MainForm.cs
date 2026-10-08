@@ -6,6 +6,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Windows.Forms;
 using ooor.Core;
+using OoorFunc.Core;
 
 namespace ooor
 {
@@ -328,7 +329,7 @@ namespace ooor
             var L = LanguageManager.Instance;
 
             // 一级菜单
-            控制台ToolStripMenuItem.Text = L.T("menu.console");
+            ToolStripMenuItemModelTalk.Text = L.T("menu.console");
             llama服务ToolStripMenuItem.Text = L.T("menu.llama");
             模型ToolStripMenuItem.Text = L.T("menu.model");
             方案ToolStripMenuItem.Text = L.T("menu.profile");
@@ -337,7 +338,6 @@ namespace ooor
             // 控制台
             打开控制台AI助手ToolStripMenuItem.Text = L.T("console.openCli");
             打开控制台AI助手继续聊ToolStripMenuItem.Text = L.T("console.openCliContinue");
-            打开控制台AI助手开放权限ToolStripMenuItem.Text = L.T("console.openCliFullPerm");
             打开窗口AI助手ToolStripMenuItem.Text = L.T("console.openWindowAgent");
             打开网页ToolStripMenuItem1.Text = L.T("console.openWeb");
 
@@ -1311,6 +1311,13 @@ namespace ooor
         /// </summary>
         private void ToolStripMenuItemRunAgent_Click(object sender, EventArgs e)
         {
+            // 弹动态 Agent 菜单：选完 agent 后以 --web 模式启动窗口版 CLI
+            ShowAgentPicker(sender as ToolStripMenuItem, agent => LaunchCliWeb(agent));
+        }
+
+        /// <summary>「窗口 AI 助手」：拉起 Ooor-cli.exe --web 模式（窗口控制台）；启动参数追加 --agent。</summary>
+        private void LaunchCliWeb(AgentRecord agent)
+        {
             var L = LanguageManager.Instance;
             string exe = Path.Combine(Application.StartupPath, "Ooor-cli.exe");
             if (!File.Exists(exe))
@@ -1332,7 +1339,7 @@ namespace ooor
                 var psi = new ProcessStartInfo
                 {
                     FileName = exe,
-                    Arguments = $"--web --pause{dev}",
+                    Arguments = $"--web --pause{dev}" + ArgAgent(agent),
                     UseShellExecute = false,
                     CreateNoWindow = true,                    // 网页终端窗口自身就是界面，不弹控制台/PowerShell
                     WorkingDirectory = LlamaRuntime.ConfigRoot // CLI 会把工作目录加入沙盒白名单
@@ -1355,6 +1362,13 @@ namespace ooor
         /// --pause 为内部参数：CLI 启动失败（如服务未运行）时停住窗口显示原因，避免一闪而过。
         /// </summary>
         private void ToolStripMenuItemOpenCli_Click(object sender, EventArgs e)
+        {
+            // 弹动态 Agent 菜单：选完 agent 后以该 agent 启动控制台 CLI
+            ShowAgentPicker(sender as ToolStripMenuItem, agent => LaunchCliConsole(agent));
+        }
+
+        /// <summary>「控制台 AI 助手」：用 PowerShell 宿主拉起 Ooor-cli（不带 --trust），启动参数追加 --agent。</summary>
+        private void LaunchCliConsole(AgentRecord agent)
         {
             var L = LanguageManager.Instance;
             string exe = Path.Combine(Application.StartupPath, "Ooor-cli.exe");
@@ -1380,7 +1394,7 @@ namespace ooor
                     // & 调用运算符启动 CLI（单引号包裹路径，兼容空格）；
                     // -NoExit 让 CLI 退出后 PowerShell 窗口仍保留，配合 --pause 停住显示错误原因；
                     // -NoProfile 避免用户配置文件的输出干扰
-                    Arguments = "-NoExit -NoProfile -Command \"& '" + exe + "' --pause\"",
+                    Arguments = "-NoExit -NoProfile -Command \"& '" + exe + "' --pause" + ArgAgent(agent) + "\"",
                     UseShellExecute = true,                      // Shell 启动会新开一个 PowerShell 控制台窗口
                     WorkingDirectory = LlamaRuntime.ConfigRoot   // CLI 会把工作目录加入沙盒白名单
                 };
@@ -1401,6 +1415,13 @@ namespace ooor
         /// "建议把文件写到 ./" 一次性展示给用户，避免用户不清楚 AI 能动哪些目录、文件落到了哪里。
         /// </summary>
         private void ToolStripMenuItemOpenAllPer_Click(object sender, EventArgs e)
+        {
+            // 弹动态 Agent 菜单：选完 agent 后以 --trust 模式启动 CLI，并把该 agent 的 BoundTools/WriteDirs 一并带上
+            ShowAgentPicker(sender as ToolStripMenuItem, agent => LaunchCliFullPerm(agent));
+        }
+
+        /// <summary>「控制台 AI 助手（开放权限）」：--trust 模式启动；启动参数追加 --agent。</summary>
+        private void LaunchCliFullPerm(AgentRecord agent)
         {
             var L = LanguageManager.Instance;
             string exe = Path.Combine(Application.StartupPath, "Ooor-cli.exe");
@@ -1472,11 +1493,13 @@ namespace ooor
                 {
                     FileName = exe,
                     // --trust 让模型跳过 Y/N 确认（"开放权限"的实质差异点）；
-                    // --root 显式把 cwd 也加一份，避免 ShellExecute 下 Environment.CurrentDirectory 与 WorkingDirectory 不一致的边界情况；
-                    // --pause 同默认入口：服务未就绪时停窗显示原因，不闪退。
-                    Arguments = "--pause --trust --root \"" + cwd + "\"",
+                    // --pause 同默认入口：服务未就绪时停窗显示原因，不闪退；
+                    // --agent 用选中的 Agent 人设开始空白新对话。
+                    // 注：白名单跟 agent 走 → 不再传 --root（cwd 不再自动进白名单）；
+                    //     Agent 的 WriteDirs 在 CLI 启动时由 agent.WriteDirs 替换 AllowedRoots。
+                    Arguments = "--pause --trust" + ArgAgent(agent),
                     UseShellExecute = false,                    // 控制台程序：Shell 启动会新开一个控制台窗口
-                    WorkingDirectory = cwd                     // 工作目录 = ConfigRoot，CLI 会自动把它加进沙盒
+                    WorkingDirectory = cwd                     // 进程 cwd = ConfigRoot（仅为子进程方便，相对路径落地不影响）
                 };
                 Process.Start(psi);
                 LogT("log.info.cliFullPerm");
@@ -1780,7 +1803,137 @@ namespace ooor
 
         private void ToolStripMenuItemOpenConsoleUseAgent_Click(object sender, EventArgs e)
         {
-            new ConsoleChatRecord().Show(this);
+            // 弹动态 Agent 菜单：选完 agent 后打开「继续聊」窗口，按所选 agent 过滤历史记录
+            ShowAgentPicker(sender as ToolStripMenuItem, agent =>
+            {
+                var form = new ConsoleChatRecord { PrefilterAgentName = agent != null ? agent.Name : null };
+                form.Show(this);
+            });
+        }
+
+        // ==================== 动态 Agent 选单（主菜单「模型对话」前 4 个子项共用） ====================
+
+        /// <summary>
+        /// 主菜单「模型对话」前 4 个子项的二次入口：弹出一个 ContextMenuStrip 列出所有 Agent。
+        /// 用户选中 agent 后调 onPicked(agent)；无 Agent 时弹提示框（而非弹空菜单）。
+        /// anchor：触发此次弹窗的菜单项，用于定位；可为 null（兜底用整个窗体做锚点）。
+        /// </summary>
+        private void ShowAgentPicker(ToolStripMenuItem anchor, Action<AgentRecord> onPicked)
+        {
+            var L = LanguageManager.Instance;
+            List<AgentRecord> agents;
+            try { agents = AgentStore.All(); }
+            catch { agents = new List<AgentRecord>(); }
+
+            if (agents == null || agents.Count == 0)
+            {
+                // 没有任何 Agent：自动创建一个默认 Agent，然后继续弹菜单。
+                // 字段填法全部收敛到 AgentFactory.CreateDefault，避免在多个调用方重复实现。
+                AgentRecord created = null;
+                try
+                {
+                    // 默认模型：跟随主窗口当前选中的模型
+                    string defaultModel = null;
+                    try
+                    {
+                        if (_selectedModel != null && !string.IsNullOrEmpty(_selectedModel.FullPath))
+                            defaultModel = _selectedModel.FullPath;
+                    }
+                    catch { }
+
+                    created = AgentStore.Add(AgentFactory.CreateDefault(L, defaultModel));
+                    agents = AgentStore.All();
+                }
+                catch (Exception ex)
+                {
+                    // 创建失败也要让用户知道为什么没弹出菜单，避免无声失败
+                    MessageBox.Show(this,
+                        string.Format(L.T("agent.createFail"), ex.Message),
+                        L.T("ccr.picker.title"),
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (created != null)
+                {
+                    // 提示用户已自动创建（一次性提示，避免每次都弹）
+                    MessageBox.Show(this, L.T("agent.autoCreated"), L.T("ccr.picker.title"),
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+
+            // Agent 超过 25 个时分段，避免菜单过长不好点；用户多见还是少见都不影响功能
+            const int MaxFlat = 25;
+            var cms = new ContextMenuStrip();
+            cms.SuspendLayout();
+            // 把回调挂到 cms.Tag 上，避免 lambda 闭包；具名 Click 处理器 AgentPickerItem_Click 再回查
+            cms.Tag = onPicked;
+            int show = agents.Count < MaxFlat ? agents.Count : MaxFlat;
+            for (int i = 0; i < show; i++)
+            {
+                AgentRecord a = agents[i];
+                var item = new ToolStripMenuItem();
+                string label = string.IsNullOrEmpty(a.Name) ? "?" : a.Name;
+                if (!string.IsNullOrEmpty(a.DefaultModel))
+                {
+                    string mn;
+                    try { mn = Path.GetFileNameWithoutExtension(a.DefaultModel); }
+                    catch { mn = a.DefaultModel; }
+                    if (!string.IsNullOrEmpty(mn)) label += string.Format(L.T("ccr.picker.modelSuffix"), mn);
+                }
+                item.Text = label;
+                if (!string.IsNullOrEmpty(a.SystemPrompt))
+                {
+                    string p = a.SystemPrompt;
+                    if (p.Length > 120) p = p.Substring(0, 120) + "…";
+                    item.ToolTipText = p.Replace('\n', ' ').Replace('\r', ' ');
+                }
+                item.Tag = a;
+                item.Click += AgentPickerItem_Click;
+                cms.Items.Add(item);
+            }
+            if (agents.Count > MaxFlat)
+            {
+                cms.Items.Add(new ToolStripSeparator());
+                var more = new ToolStripMenuItem("… (" + agents.Count + ")");
+                more.Enabled = false;
+                cms.Items.Add(more);
+            }
+            cms.ResumeLayout();
+
+            // 弹出位置：紧贴当前鼠标光标（用户刚点了菜单项，光标就在那附近）。
+            // ToolStrip 子项的 Click 默认不会自动关闭其 DropDown，所以二级菜单能正常挂上去；
+            // 但这里我们用 ContextMenuStrip 独立弹出，弹在鼠标位置最符合用户预期。
+            Control owner = this;
+            if (anchor != null)
+            {
+                ToolStrip parent = anchor.GetCurrentParent();
+                if (parent != null) owner = parent;
+                else if (menuStrip1 != null) owner = menuStrip1;
+            }
+            // ContextMenuStrip.Show(Point screenLocation) 重载按屏幕坐标弹出，无需坐标转换
+            cms.Show(Cursor.Position);
+        }
+
+        /// <summary>ShowAgentPicker 弹出的动态菜单的 Click 处理器：从 item.Tag 取 agent，再从父菜单 cms.Tag 取回调执行。</summary>
+        private void AgentPickerItem_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripMenuItem;
+            if (item == null) return;
+            var agent = item.Tag as AgentRecord;
+            if (agent == null) return;
+            ToolStrip parent = item.GetCurrentParent();
+            if (parent == null) return;
+            var cb = parent.Tag as Action<AgentRecord>;
+            if (cb == null) return;
+            try { cb(agent); } catch { }
+        }
+
+        /// <summary>把 agent 名称包成 --agent 参数；name 为空时返回空串。</summary>
+        private static string ArgAgent(AgentRecord a)
+        {
+            if (a == null || string.IsNullOrEmpty(a.Name)) return "";
+            return " --agent \"" + a.Name.Replace("\"", "") + "\"";
         }
 
         private void toolStripSplitButton3_ButtonClick(object sender, EventArgs e)

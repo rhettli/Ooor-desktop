@@ -92,14 +92,13 @@ namespace ooor
             this.管理ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.下载新模型ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
+            this.debugModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ToolStripMenuItemModelTalk = new System.Windows.Forms.ToolStripMenuItem();
+            this.agent管理ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.控制台对话管理ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-            this.agent管理ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.debugModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.控制台ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.打开控制台AI助手ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.打开控制台AI助手继续聊ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.打开控制台AI助手开放权限ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator14 = new System.Windows.Forms.ToolStripSeparator();
             this.打开窗口AI助手ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator11 = new System.Windows.Forms.ToolStripSeparator();
@@ -525,7 +524,7 @@ namespace ooor
             | System.Windows.Forms.AnchorStyles.Right)));
             this.progressBar1.ForeColor = System.Drawing.Color.Black;
             this.progressBar1.Location = new System.Drawing.Point(21, 14);
-            this.progressBar1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.progressBar1.Margin = new System.Windows.Forms.Padding(2);
             this.progressBar1.Name = "progressBar1";
             this.progressBar1.Size = new System.Drawing.Size(789, 52);
             this.progressBar1.Step = 5;
@@ -539,7 +538,7 @@ namespace ooor
             this.panel1.Controls.Add(this.panelProgress);
             this.panel1.Controls.Add(this.txtLog);
             this.panel1.Location = new System.Drawing.Point(0, 231);
-            this.panel1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panel1.Margin = new System.Windows.Forms.Padding(2);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(835, 352);
             this.panel1.TabIndex = 27;
@@ -551,7 +550,7 @@ namespace ooor
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panelProgress.Controls.Add(this.progressBar1);
             this.panelProgress.Location = new System.Drawing.Point(3, 3);
-            this.panelProgress.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panelProgress.Margin = new System.Windows.Forms.Padding(2);
             this.panelProgress.Name = "panelProgress";
             this.panelProgress.Size = new System.Drawing.Size(830, 80);
             this.panelProgress.TabIndex = 27;
@@ -562,7 +561,7 @@ namespace ooor
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.llama服务ToolStripMenuItem,
             this.模型ToolStripMenuItem,
-            this.控制台ToolStripMenuItem,
+            this.ToolStripMenuItemModelTalk,
             this.方案ToolStripMenuItem,
             this.ToolStripMenuItemUser,
             this.帮助ToolStripMenuItem});
@@ -662,9 +661,6 @@ namespace ooor
             this.管理ToolStripMenuItem,
             this.下载新模型ToolStripMenuItem,
             this.toolStripSeparator7,
-            this.控制台对话管理ToolStripMenuItem,
-            this.toolStripSeparator5,
-            this.agent管理ToolStripMenuItem,
             this.debugModeToolStripMenuItem});
             this.模型ToolStripMenuItem.Name = "模型ToolStripMenuItem";
             this.模型ToolStripMenuItem.Size = new System.Drawing.Size(64, 22);
@@ -674,7 +670,7 @@ namespace ooor
             // 
             this.管理ToolStripMenuItem.Name = "管理ToolStripMenuItem";
             this.管理ToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.M)));
-            this.管理ToolStripMenuItem.Size = new System.Drawing.Size(240, 22);
+            this.管理ToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
             this.管理ToolStripMenuItem.Text = "管理";
             this.管理ToolStripMenuItem.Click += new System.EventHandler(this.toolStripButtonManageModels_Click);
             // 
@@ -682,65 +678,67 @@ namespace ooor
             // 
             this.下载新模型ToolStripMenuItem.Name = "下载新模型ToolStripMenuItem";
             this.下载新模型ToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
-            this.下载新模型ToolStripMenuItem.Size = new System.Drawing.Size(240, 22);
+            this.下载新模型ToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
             this.下载新模型ToolStripMenuItem.Text = "下载新模型";
             this.下载新模型ToolStripMenuItem.Click += new System.EventHandler(this.toolStripButtonDownloadModels_Click);
             // 
             // toolStripSeparator7
             // 
             this.toolStripSeparator7.Name = "toolStripSeparator7";
-            this.toolStripSeparator7.Size = new System.Drawing.Size(237, 6);
+            this.toolStripSeparator7.Size = new System.Drawing.Size(179, 6);
+            // 
+            // debugModeToolStripMenuItem
+            // 
+            this.debugModeToolStripMenuItem.CheckOnClick = true;
+            this.debugModeToolStripMenuItem.Name = "debugModeToolStripMenuItem";
+            this.debugModeToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
+            this.debugModeToolStripMenuItem.Text = "调试模式";
+            this.debugModeToolStripMenuItem.CheckStateChanged += new System.EventHandler(this.debugModeToolStripMenuItem_CheckStateChanged);
+            // 
+            // ToolStripMenuItemModelTalk
+            // 
+            this.ToolStripMenuItemModelTalk.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.agent管理ToolStripMenuItem,
+            this.控制台对话管理ToolStripMenuItem,
+            this.toolStripSeparator5,
+            this.打开控制台AI助手ToolStripMenuItem,
+            this.打开控制台AI助手继续聊ToolStripMenuItem,
+            this.toolStripSeparator14,
+            this.打开窗口AI助手ToolStripMenuItem,
+            this.toolStripSeparator11,
+            this.打开网页ToolStripMenuItem1});
+            this.ToolStripMenuItemModelTalk.Name = "ToolStripMenuItemModelTalk";
+            this.ToolStripMenuItemModelTalk.Size = new System.Drawing.Size(84, 22);
+            this.ToolStripMenuItemModelTalk.Text = "模型对话(&C)";
+            // 
+            // agent管理ToolStripMenuItem
+            // 
+            this.agent管理ToolStripMenuItem.Name = "agent管理ToolStripMenuItem";
+            this.agent管理ToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.J)));
+            this.agent管理ToolStripMenuItem.Size = new System.Drawing.Size(301, 22);
+            this.agent管理ToolStripMenuItem.Text = "Agent管理";
+            this.agent管理ToolStripMenuItem.Click += new System.EventHandler(this.toolStripSplitButton3_ButtonClick);
             // 
             // 控制台对话管理ToolStripMenuItem
             // 
             this.控制台对话管理ToolStripMenuItem.Name = "控制台对话管理ToolStripMenuItem";
             this.控制台对话管理ToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.H)));
-            this.控制台对话管理ToolStripMenuItem.Size = new System.Drawing.Size(240, 22);
-            this.控制台对话管理ToolStripMenuItem.Text = "控制台对话管理";
+            this.控制台对话管理ToolStripMenuItem.Size = new System.Drawing.Size(301, 22);
+            this.控制台对话管理ToolStripMenuItem.Text = "Agent对话记录";
             this.控制台对话管理ToolStripMenuItem.Click += new System.EventHandler(this.ToolStripMenuItem_Click);
             // 
             // toolStripSeparator5
             // 
             this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(237, 6);
-            // 
-            // agent管理ToolStripMenuItem
-            // 
-            this.agent管理ToolStripMenuItem.Name = "agent管理ToolStripMenuItem";
-            this.agent管理ToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.J)));
-            this.agent管理ToolStripMenuItem.Size = new System.Drawing.Size(240, 22);
-            this.agent管理ToolStripMenuItem.Text = "Agent管理";
-            this.agent管理ToolStripMenuItem.Click += new System.EventHandler(this.toolStripSplitButton3_ButtonClick);
-            // 
-            // debugModeToolStripMenuItem
-            // 
-            this.debugModeToolStripMenuItem.Name = "debugModeToolStripMenuItem";
-            this.debugModeToolStripMenuItem.Size = new System.Drawing.Size(240, 22);
-            this.debugModeToolStripMenuItem.Text = "调试模式";
-            this.debugModeToolStripMenuItem.CheckOnClick = true;
-            this.debugModeToolStripMenuItem.CheckStateChanged += new System.EventHandler(this.debugModeToolStripMenuItem_CheckStateChanged);
-            // 
-            // 控制台ToolStripMenuItem
-            // 
-            this.控制台ToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.打开控制台AI助手ToolStripMenuItem,
-            this.打开控制台AI助手继续聊ToolStripMenuItem,
-            this.打开控制台AI助手开放权限ToolStripMenuItem,
-            this.toolStripSeparator14,
-            this.打开窗口AI助手ToolStripMenuItem,
-            this.toolStripSeparator11,
-            this.打开网页ToolStripMenuItem1});
-            this.控制台ToolStripMenuItem.Name = "控制台ToolStripMenuItem";
-            this.控制台ToolStripMenuItem.Size = new System.Drawing.Size(72, 22);
-            this.控制台ToolStripMenuItem.Text = "控制台(&C)";
+            this.toolStripSeparator5.Size = new System.Drawing.Size(298, 6);
             // 
             // 打开控制台AI助手ToolStripMenuItem
             // 
             this.打开控制台AI助手ToolStripMenuItem.Name = "打开控制台AI助手ToolStripMenuItem";
             this.打开控制台AI助手ToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.A)));
-            this.打开控制台AI助手ToolStripMenuItem.Size = new System.Drawing.Size(325, 22);
+            this.打开控制台AI助手ToolStripMenuItem.Size = new System.Drawing.Size(301, 22);
             this.打开控制台AI助手ToolStripMenuItem.Text = "打开控制台AI助手";
             this.打开控制台AI助手ToolStripMenuItem.Click += new System.EventHandler(this.ToolStripMenuItemOpenCli_Click);
             // 
@@ -749,44 +747,35 @@ namespace ooor
             this.打开控制台AI助手继续聊ToolStripMenuItem.Name = "打开控制台AI助手继续聊ToolStripMenuItem";
             this.打开控制台AI助手继续聊ToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Alt) 
             | System.Windows.Forms.Keys.A)));
-            this.打开控制台AI助手继续聊ToolStripMenuItem.Size = new System.Drawing.Size(325, 22);
+            this.打开控制台AI助手继续聊ToolStripMenuItem.Size = new System.Drawing.Size(301, 22);
             this.打开控制台AI助手继续聊ToolStripMenuItem.Text = "打开控制台AI助手（继续聊）";
             this.打开控制台AI助手继续聊ToolStripMenuItem.Click += new System.EventHandler(this.ToolStripMenuItemOpenConsoleUseAgent_Click);
-            // 
-            // 打开控制台AI助手开放权限ToolStripMenuItem
-            // 
-            this.打开控制台AI助手开放权限ToolStripMenuItem.Name = "打开控制台AI助手开放权限ToolStripMenuItem";
-            this.打开控制台AI助手开放权限ToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
-            | System.Windows.Forms.Keys.O)));
-            this.打开控制台AI助手开放权限ToolStripMenuItem.Size = new System.Drawing.Size(325, 22);
-            this.打开控制台AI助手开放权限ToolStripMenuItem.Text = "打开控制台AI助手（开放权限）";
-            this.打开控制台AI助手开放权限ToolStripMenuItem.Click += new System.EventHandler(this.ToolStripMenuItemOpenAllPer_Click);
             // 
             // toolStripSeparator14
             // 
             this.toolStripSeparator14.Name = "toolStripSeparator14";
-            this.toolStripSeparator14.Size = new System.Drawing.Size(322, 6);
+            this.toolStripSeparator14.Size = new System.Drawing.Size(298, 6);
             // 
             // 打开窗口AI助手ToolStripMenuItem
             // 
             this.打开窗口AI助手ToolStripMenuItem.Name = "打开窗口AI助手ToolStripMenuItem";
             this.打开窗口AI助手ToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.W)));
-            this.打开窗口AI助手ToolStripMenuItem.Size = new System.Drawing.Size(325, 22);
+            this.打开窗口AI助手ToolStripMenuItem.Size = new System.Drawing.Size(301, 22);
             this.打开窗口AI助手ToolStripMenuItem.Text = "打开窗口AI 助手";
             this.打开窗口AI助手ToolStripMenuItem.Click += new System.EventHandler(this.ToolStripMenuItemRunAgent_Click);
             // 
             // toolStripSeparator11
             // 
             this.toolStripSeparator11.Name = "toolStripSeparator11";
-            this.toolStripSeparator11.Size = new System.Drawing.Size(322, 6);
+            this.toolStripSeparator11.Size = new System.Drawing.Size(298, 6);
             // 
             // 打开网页ToolStripMenuItem1
             // 
             this.打开网页ToolStripMenuItem1.Name = "打开网页ToolStripMenuItem1";
             this.打开网页ToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.G)));
-            this.打开网页ToolStripMenuItem1.Size = new System.Drawing.Size(325, 22);
+            this.打开网页ToolStripMenuItem1.Size = new System.Drawing.Size(301, 22);
             this.打开网页ToolStripMenuItem1.Text = "打开网页";
             this.打开网页ToolStripMenuItem1.Click += new System.EventHandler(this.btnOpenWeb_Click);
             // 
@@ -803,7 +792,7 @@ namespace ooor
             // 
             this.保存方案ToolStripMenuItem.Name = "保存方案ToolStripMenuItem";
             this.保存方案ToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.保存方案ToolStripMenuItem.Size = new System.Drawing.Size(168, 22);
+            this.保存方案ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.保存方案ToolStripMenuItem.Text = "保存方案";
             this.保存方案ToolStripMenuItem.Click += new System.EventHandler(this.toolStripButtonSaveSlu_Click);
             // 
@@ -811,7 +800,7 @@ namespace ooor
             // 
             this.管理方案ToolStripMenuItem1.Name = "管理方案ToolStripMenuItem1";
             this.管理方案ToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P)));
-            this.管理方案ToolStripMenuItem1.Size = new System.Drawing.Size(168, 22);
+            this.管理方案ToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
             this.管理方案ToolStripMenuItem1.Text = "管理方案";
             this.管理方案ToolStripMenuItem1.Click += new System.EventHandler(this.toolStripButtonManageProfiles_Click);
             // 
@@ -826,7 +815,7 @@ namespace ooor
             // ToolStripMenuItemUserOnline
             // 
             this.ToolStripMenuItemUserOnline.Name = "ToolStripMenuItemUserOnline";
-            this.ToolStripMenuItemUserOnline.Size = new System.Drawing.Size(124, 22);
+            this.ToolStripMenuItemUserOnline.Size = new System.Drawing.Size(180, 22);
             this.ToolStripMenuItemUserOnline.Text = "在线列表";
             this.ToolStripMenuItemUserOnline.Click += new System.EventHandler(this.ToolStripMenuItemUserOnline_Click);
             // 
@@ -948,7 +937,7 @@ namespace ooor
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Panel panelProgress;
         private System.Windows.Forms.MenuStrip menuStrip1;
-        private System.Windows.Forms.ToolStripMenuItem 控制台ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemModelTalk;
         private System.Windows.Forms.ToolStripMenuItem llama服务ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 模型ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 方案ToolStripMenuItem;
@@ -980,7 +969,6 @@ namespace ooor
         private System.Windows.Forms.ToolStripMenuItem 打开窗口AI助手ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 打开网页ToolStripMenuItem1;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
-        private System.Windows.Forms.ToolStripMenuItem 打开控制台AI助手开放权限ToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator14;
         private System.Windows.Forms.ToolStripButton ToolStripMenuItemOpenConsole;
         private System.Windows.Forms.ToolStripMenuItem 下载管理ToolStripMenuItem;

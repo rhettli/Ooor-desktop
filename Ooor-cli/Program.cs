@@ -158,8 +158,8 @@ namespace Ooor_cli
 
             _opt.SystemPrompt = string.Format(CliLang.T("sys.prompt"), confirmHint);
 
-            // 当前目录进白名单（CLI 的自然工作目录）
-            AddRoot(_opt, Environment.CurrentDirectory);
+            // 当前目录不再进白名单（白名单跟 agent 走，不掺全局 cwd）。
+            // 保留 --root 显式追加的目录作为兜底（用户在命令行主动指定，仍然优先于 agent）。
             foreach (string r in extraRoots) AddRoot(_opt, r);
 
             _agent = new LocalModelAgent(baseUrl, _opt, CliUi.Confirm);
@@ -195,6 +195,14 @@ namespace Ooor_cli
                 {
                     _agent.ReplaceSystemPrompt(startAgent.SystemPrompt ?? "");
                     _currentAgentName = startAgent.Name;
+
+                    // 白名单跟 agent 走：agent.WriteDirs 非空 → 完全替换 AllowedRoots（连 --root 也不保留），
+                    // agent.WriteDirs 为空 → 保留之前（默认 = 仅 --root）兜底，让用户至少能调工具查看报错。
+                    if (startAgent.WriteDirs != null && startAgent.WriteDirs.Count > 0)
+                    {
+                        _opt.AllowedRoots.Clear();
+                        foreach (string d in startAgent.WriteDirs) AddRoot(_opt, d);
+                    }
                 }
                 else CliUi.Info(CliLang.Tf("agentNotFound", argAgent));
             }

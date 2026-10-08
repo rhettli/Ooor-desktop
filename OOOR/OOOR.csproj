@@ -163,6 +163,7 @@
     </Compile>
     <Compile Include="Core\AgentHost.cs" />
     <Compile Include="Core\AgentStore.cs" />
+    <Compile Include="Core\AgentFactory.cs" />
     <Compile Include="Core\BuiltinToolCatalog.cs" />
     <Compile Include="Core\ClientHeartbeat.cs" />
     <Compile Include="Core\DEF.cs" />

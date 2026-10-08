@@ -191,17 +191,9 @@ namespace ooor
         {
             var a = SelectedAgent;
             if (a == null) return;
-            var copy = new AgentRecord
-            {
-                Name = a.Name + L.T("agm.copySuffix"),
-                FullDevPermission = a.FullDevPermission,
-                SystemPrompt = a.SystemPrompt,
-                UseSystemPrompt = a.UseSystemPrompt,
-                DefaultModel = a.DefaultModel,
-                BoundTools = a.BoundTools != null ? a.BoundTools.ToList() : null,
-                BoundMcp = a.BoundMcp != null ? a.BoundMcp.ToList() : null
-            };
-            AgentStore.Add(copy);
+            // 走 AgentFactory.Clone：所有字段（含 WriteDirs）一起深拷贝；
+            // 之前手写曾漏 WriteDirs，导致复制的 agent 白名单丢失。
+            AgentStore.Add(AgentFactory.Clone(a, a.Name + L.T("agm.copySuffix")));
             LoadAgents();
         }
 

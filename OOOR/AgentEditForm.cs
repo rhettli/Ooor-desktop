@@ -51,6 +51,11 @@ namespace ooor
             // 白名单右键菜单
             tsmiAddDir.Click += (s, e) => AddWriteDir();
             tsmiRemoveDir.Click += (s, e) => RemoveWriteDir();
+            tsmiLocateDir.Click += (s, e) => LocateWriteDir();
+            tsmiCopyDir.Click += (s, e) => CopyWriteDir();
+            // 列表鼠标按下时按"是否选中行"动态启用/禁用定位+复制；没选中时右键不亮
+            listViewWriteDir.MouseDown += (s, e) => UpdateWriteDirMenuState();
+            cmsWriteDir.Opening += (s, e) => UpdateWriteDirMenuState();
 
             LoadData();
         }
@@ -71,6 +76,8 @@ namespace ooor
             label2.Text = L.T("age.lbl.writeDir");
             tsmiAddDir.Text = L.T("age.cm.addDir");
             tsmiRemoveDir.Text = L.T("age.cm.removeDir");
+            tsmiLocateDir.Text = L.T("age.cm.locateDir");
+            tsmiCopyDir.Text = L.T("age.cm.copyDir");
             btnOk.Text = L.T("age.btn.ok");
             btnCancel.Text = L.T("age.btn.cancel");
 
@@ -265,6 +272,59 @@ namespace ooor
                     listViewWriteDir.Items.Remove(listViewWriteDir.SelectedItems[i]);
             }
             finally { listViewWriteDir.EndUpdate(); }
+        }
+
+        /// <summary>按当前选中行数动态启用/禁用定位+复制菜单（右键弹出前 + 列表鼠标按下时调用）</summary>
+        private void UpdateWriteDirMenuState()
+        {
+            bool hasSel = listViewWriteDir.SelectedItems.Count > 0;
+            tsmiLocateDir.Enabled = hasSel;
+            tsmiCopyDir.Enabled = hasSel;
+        }
+
+        /// <summary>在资源管理器中定位白名单目录（多选时只定位第一个）</summary>
+        private void LocateWriteDir()
+        {
+            if (listViewWriteDir.SelectedItems.Count == 0) return;
+            string path = (listViewWriteDir.SelectedItems[0].Text ?? "").Trim();
+            if (path.Length == 0) return;
+            try
+            {
+                if (!Directory.Exists(path))
+                {
+                    MessageBox.Show(this,
+                        string.Format(L.T("age.msg.dirNotExist"), path),
+                        L.T("age.caption.prompt"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                // /select 把目录高亮在资源管理器中，更直观
+                System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + path + "\"");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, L.T("age.caption.prompt"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        /// <summary>把白名单路径复制到剪贴板（多选时按行拼接）</summary>
+        private void CopyWriteDir()
+        {
+            if (listViewWriteDir.SelectedItems.Count == 0) return;
+            var lines = new List<string>();
+            foreach (ListViewItem item in listViewWriteDir.SelectedItems)
+            {
+                string p = (item.Text ?? "").Trim();
+                if (p.Length > 0) lines.Add(p);
+            }
+            if (lines.Count == 0) return;
+            try
+            {
+                System.Windows.Forms.Clipboard.SetText(string.Join(Environment.NewLine, lines));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, L.T("age.caption.prompt"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         private void chkUseSystemPrompt_CheckStateChanged(object sender, EventArgs e)

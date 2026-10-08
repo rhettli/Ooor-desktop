@@ -8,7 +8,7 @@ namespace OoorFunc.Core
     /// <summary>
     /// Agent 配置的只读视图（Ooor-cli 侧使用）。
     /// 与 OOOR 主程序的 ooor.Core.AgentRecord 对应同一份文档（agents 集合），
-    /// CLI 只需要名称 / 系统提示词 / 默认模型，故这里只声明读取所需字段；其余字段 LiteDB 自动忽略。
+    /// CLI 读取名称 / 系统提示词 / 默认模型 / 沙盒白名单；其余字段 LiteDB 自动忽略。
     /// </summary>
     public class AgentInfo
     {
@@ -16,6 +16,8 @@ namespace OoorFunc.Core
         public string Name { get; set; }
         public string SystemPrompt { get; set; }
         public string DefaultModel { get; set; }
+        /// <summary>沙盒白名单目录（绝对路径）。白名单与 agent 走：CLI 启动时按它的值替换 AllowedRoots。</summary>
+        public List<string> WriteDirs { get; set; } = new List<string>();
     }
 
     /// <summary>从共享 LiteDB 读取 Agent 列表（只读；写操作仍由 OOOR 主程序的 AgentStore 负责）。</summary>
