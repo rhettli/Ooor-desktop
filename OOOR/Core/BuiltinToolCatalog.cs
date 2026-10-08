@@ -17,23 +17,31 @@ namespace ooor.Core
             { "list_directory",  "列出目录内容（文件/子目录/大小/时间）" },
             { "read_file",       "读取文本文件内容" },
             { "search_files",    "在目录中递归搜索文件" },
+            { "search_in_files", "在目录中递归搜索文件内容（支持正则）" },
             { "get_time",        "获取当前本地时间与 UTC 时间" },
             { "get_environment", "获取操作系统/CPU/内存/机器名等环境信息" },
             { "get_app_paths",   "获取主程序相关路径（配置/模型/llama 目录等）" },
             { "get_app_info",    "获取主程序版本、工具清单、目录树状结构" },
+            { "list_models",     "列出本机模型库中的 .gguf 文件（含大小）" },
+            { "list_llama_versions", "列出已下载的 llama.cpp 运行版本与当前选中版本" },
 
             // —— 写入类（需 AllowWrite）——
             { "write_file",      "覆盖写入文件内容" },
             { "create_file",     "创建新文件（不覆盖已存在文件）" },
-            { "delete_file",     "删除文件" },
+            { "edit_file",       "精确替换文件中的局部文本" },
+            { "delete_file",     "删除文件（移到回收站）" },
+            { "move_file",       "移动或重命名文件" },
+            { "copy_file",       "复制文件" },
+            { "make_directory",  "创建目录" },
 
             // —— 执行类（需 AllowCommand）——
-            { "run_command",     "在 cmd.exe 中执行一条命令" },
+            { "run_command",     "在 PowerShell 中执行一条命令" },
             { "execute_script",  "执行脚本文件（.py/.ps1/.bat/.sh 等）" },
 
             // —— 联网类（需 AllowInternet）——
             { "web_search",      "使用搜索引擎进行关键词搜索" },
             { "fetch_url",       "打开指定 URL 并读取其内容" },
+            { "download_file",   "下载 URL 文件到沙盒目录（支持大文件）" },
         };
 
         /// <summary>全部工具名（按 All 的插入顺序）</summary>

@@ -50,17 +50,24 @@ namespace OoorFunc.Core
             Add(new ListDirectoryTool(options));
             Add(new ReadFileTool(options));
             Add(new SearchFilesTool(options));
+            Add(new SearchInFilesTool(options));
             Add(new GetTimeTool());
             Add(new GetEnvironmentTool());
             Add(new GetAppPathsTool());
             Add(new GetAppInfoTool());
+            Add(new ListModelsTool());
+            Add(new ListLlamaVersionsTool());
 
             // ---- 写入类：AllowWrite 开启才注册 ----
             if (options.AllowWrite)
             {
                 Add(new WriteFileTool(options, confirm, TurnLog));
                 Add(new CreateFileTool(options, confirm, TurnLog));
+                Add(new EditFileTool(options, confirm, TurnLog));
                 Add(new DeleteFileTool(options, confirm));
+                Add(new MoveFileTool(options, confirm, TurnLog));
+                Add(new CopyFileTool(options, confirm, TurnLog));
+                Add(new MakeDirectoryTool(options, confirm));
             }
             // ---- 执行类：AllowCommand 开启才注册 ----
             // 顺序即发给模型的 tools 数组顺序：run_command 在前，避免模型只认 execute_script 不往后找
@@ -74,6 +81,7 @@ namespace OoorFunc.Core
             {
                 Add(new WebSearchTool(options));
                 Add(new FetchUrlTool(options));
+                Add(new DownloadFileTool(options, TurnLog));
             }
         }
 
@@ -352,7 +360,15 @@ namespace OoorFunc.Core
         private sealed class ReadFileTool : IAgentTool
         {
             public string Name { get { return "read_file"; } }
-            public string Description { get { return "读取文本文件内容（UTF-8）。文件大小受 ReadMaxBytes 限制；超过请改用搜索工具分块读取。"; } }
+            public string Description
+            {
+                get
+                {
+                    return "读取文本文件内容（UTF-8）。两种读法：① 不传 offset/limit 时整文件读取，文件大小受 ReadMaxBytes 限制，超报错；" +
+                           "② 传 offset（起始行号，从 1 开始）/ limit（读取行数，默认 2000）按行分页读取，大文件必须用这种方式，逐段读完整个文件。" +
+                           "分页结果每行前带行号。另有 max_bytes 可收紧整文件读取上限。";
+                }
+            }
             public IDictionary<string, object> ParametersSchema
             {
                 get
@@ -363,7 +379,9 @@ namespace OoorFunc.Core
                         { "properties", new Dictionary<string, object>
                             {
                                 { "path", new Dictionary<string, object> { { "type", "string" }, { "description", "文件绝对路径或相对沙盒根的路径" } } },
-                                { "max_bytes", new Dictionary<string, object> { { "type", "integer" }, { "description", "本次读取上限（字节），默认走 Options.ReadMaxBytes" } } }
+                                { "offset", new Dictionary<string, object> { { "type", "integer" }, { "description", "起始行号（从 1 开始）。传了它或 limit 就按行分页读取，适合大文件" } } },
+                                { "limit", new Dictionary<string, object> { { "type", "integer" }, { "description", "分页读取的最大行数，默认 2000" } } },
+                                { "max_bytes", new Dictionary<string, object> { { "type", "integer" }, { "description", "整文件读取（不分页）时的上限（字节），默认走 Options.ReadMaxBytes" } } }
                             }
                         },
                         { "required", new[] { "path" } }
@@ -378,6 +396,12 @@ namespace OoorFunc.Core
                 p = _opt.ResolveAllowed(p);
                 if (!File.Exists(p)) return AgentToolResult.Err("文件不存在：" + p);
 
+                int offset = AsInt(args, "offset", 0, 0, 100000000);
+                int limit = AsInt(args, "limit", 0, 0, 10000);
+                bool paged = offset > 0 || limit > 0;
+
+                if (paged) return ReadPaged(p, offset > 0 ? offset : 1, limit > 0 ? limit : 2000);
+
                 long cap = _opt.ReadMaxBytes;
                 object mb;
                 if (args != null && args.TryGetValue("max_bytes", out mb) && mb != null)
@@ -391,7 +415,8 @@ namespace OoorFunc.Core
                 catch (Exception ex) { return AgentToolResult.Err("读取失败：" + ex.Message); }
 
                 if (len > cap)
-                    return AgentToolResult.Err("文件过大（" + len + " bytes > 上限 " + cap + "），请用搜索/分块方式读取");
+                    return AgentToolResult.Err("文件过大（" + len + " bytes > 上限 " + cap +
+                        "），请改用 offset/limit 按行分页读取");
 
                 try
                 {
@@ -399,6 +424,41 @@ namespace OoorFunc.Core
                     return AgentToolResult.Ok(text);
                 }
                 catch (Exception ex) { return AgentToolResult.Err("读取失败：" + ex.Message); }
+            }
+
+            /// <summary>
+            /// 按行分页读取：File.ReadLines 流式枚举（不会整文件载入内存），跳过 startLine 之前的行；
+            /// 每行前加「行号: 」前缀，超长行截断；达到行数上限或输出字节上限时标注还有后续。
+            /// </summary>
+            private AgentToolResult ReadPaged(string p, int startLine, int takeLines)
+            {
+                var sb = new StringBuilder();
+                int shown = 0;
+                long bytes = 0;
+                bool more = false;
+                try
+                {
+                    int lineNo = 0;
+                    foreach (string raw in File.ReadLines(p, new UTF8Encoding(false)))
+                    {
+                        lineNo++;
+                        if (lineNo < startLine) continue;
+                        if (shown >= takeLines || bytes > _opt.ReadMaxBytes) { more = true; break; }
+
+                        string line = raw;
+                        if (line.Length > 500) line = line.Substring(0, 500) + "…（本行过长已截断）";
+                        sb.Append(lineNo).Append(": ").Append(line).Append('\n');
+                        bytes += line.Length + 16;
+                        shown++;
+                    }
+                }
+                catch (Exception ex) { return AgentToolResult.Err("读取失败：" + ex.Message); }
+
+                if (shown == 0)
+                    return AgentToolResult.Ok("（第 " + startLine + " 行起没有内容：文件没有这么多行）");
+                if (more)
+                    sb.Append("…（还有更多内容：增大 limit，或把 offset 设为 ").Append(startLine + shown).Append(" 继续读）");
+                return AgentToolResult.Ok(sb.ToString().TrimEnd('\n'));
             }
         }
 
@@ -454,6 +514,208 @@ namespace OoorFunc.Core
                 catch (Exception ex) { return AgentToolResult.Err("搜索失败：" + ex.Message); }
                 if (shown == 0) return AgentToolResult.Ok("（无命中）");
                 return AgentToolResult.Ok(sb.ToString().TrimEnd('\n'));
+            }
+        }
+
+        /// <summary>
+        /// 按【文件内容】递归搜索（search_files 只按文件名找，本工具是 Grep 等价物）。
+        /// 自动跳过二进制文件（扩展名黑名单 + 文件头 NUL 字节嗅探）和 .git 目录；
+        /// 单文件只扫前 PerFileCap 字节，输出按「文件:行号:内容」逐行返回，命中/输出超限标注截断。
+        /// </summary>
+        private sealed class SearchInFilesTool : IAgentTool
+        {
+            public string Name { get { return "search_in_files"; } }
+            public string Description
+            {
+                get
+                {
+                    return "在目录下递归搜索【文件内容】（search_files 只按文件名查找，找代码/文字内容用本工具）。" +
+                           "逐行返回「文件路径:行号:匹配行」。pattern 为要找的文本；regex=true 时 pattern 按正则表达式解析；" +
+                           "glob 可限定文件名通配符（如 *.cs、*.txt，默认全部）；ignore_case 默认 true。" +
+                           "自动跳过二进制文件和 .git 目录。命中过多会截断，可缩小 path 范围或加 glob 再搜。";
+                }
+            }
+            public IDictionary<string, object> ParametersSchema
+            {
+                get
+                {
+                    return new Dictionary<string, object>
+                    {
+                        { "type", "object" },
+                        { "properties", new Dictionary<string, object>
+                            {
+                                { "path", new Dictionary<string, object> { { "type", "string" }, { "description", "搜索根目录（必须在沙盒内）" } } },
+                                { "pattern", new Dictionary<string, object> { { "type", "string" }, { "description", "要查找的文本；regex=true 时为正则表达式" } } },
+                                { "glob", new Dictionary<string, object> { { "type", "string" }, { "description", "文件名通配符过滤，如 *.cs、*.py；默认 *（全部文件）" } } },
+                                { "regex", new Dictionary<string, object> { { "type", "boolean" }, { "description", "pattern 是否按正则表达式解析，默认 false（普通子串匹配）" } } },
+                                { "ignore_case", new Dictionary<string, object> { { "type", "boolean" }, { "description", "是否不区分大小写，默认 true" } } },
+                                { "max_results", new Dictionary<string, object> { { "type", "integer" }, { "description", "最多返回的匹配行数，1-500，默认 100" } } }
+                            }
+                        },
+                        { "required", new[] { "path", "pattern" } }
+                    };
+                }
+            }
+
+            /// <summary>单文件最多扫描的字节数（防止 GB 级日志把一轮对话吃光）</summary>
+            private const int PerFileCap = 2 * 1024 * 1024;
+            /// <summary>本轮最多扫描的文件数</summary>
+            private const int MaxFilesScan = 5000;
+            /// <summary>返回文本的字符上限（超出截断）</summary>
+            private const int MaxOutputChars = 30000;
+
+            private static readonly HashSet<string> BinaryExt = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".exe",".dll",".so",".dylib",".pdb",".class",".jar",".pyc",".wasm",".bin",".dat",
+                ".zip",".7z",".rar",".tar",".gz",".bz2",".xz",".cab",".msi",
+                ".png",".jpg",".jpeg",".gif",".bmp",".ico",".webp",".tiff",".svgz",
+                ".mp3",".mp4",".avi",".mkv",".mov",".wav",".flac",".ogg",
+                ".pdf",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".iso",".vmdk"
+            };
+
+            private readonly AgentOptions _opt;
+            public SearchInFilesTool(AgentOptions opt) { _opt = opt; }
+
+            public AgentToolResult Execute(IDictionary<string, object> args)
+            {
+                string p = AsString(args, "path", true);
+                string pattern = AsString(args, "pattern", true);
+                string glob = AsString(args, "glob", false);
+                bool useRegex = AsBool(args, "regex", false);
+                bool ignoreCase = AsBool(args, "ignore_case", true);
+                int maxResults = AsInt(args, "max_results", 100, 1, 500);
+                if (string.IsNullOrEmpty(glob)) glob = "*";
+
+                p = _opt.ResolveAllowed(p);
+                if (!Directory.Exists(p)) return AgentToolResult.Err("目录不存在：" + p);
+
+                // 编译匹配器：正则非法时直接报错，让模型修正后重试
+                Func<string, bool> match;
+                if (useRegex)
+                {
+                    Regex rx;
+                    try { rx = new Regex(pattern, RegexOptions.Compiled | (ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None)); }
+                    catch (ArgumentException ex) { return AgentToolResult.Err("正则表达式不合法：" + ex.Message); }
+                    match = line => rx.IsMatch(line);
+                }
+                else
+                {
+                    var cmp = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                    match = line => line.IndexOf(pattern, cmp) >= 0;
+                }
+
+                string globRe = "^" + Regex.Escape(glob).Replace("\\*", ".*").Replace("\\?", ".") + "$";
+
+                var sb = new StringBuilder();
+                int hits = 0, filesScanned = 0, filesSkipped = 0;
+                bool truncated = false;
+
+                foreach (string f in EnumerateFilesSafe(p))
+                {
+                    if (filesScanned >= MaxFilesScan) { truncated = true; break; }
+
+                    string name;
+                    try { name = Path.GetFileName(f); } catch { continue; }
+                    if (!Regex.IsMatch(name, globRe, RegexOptions.IgnoreCase)) continue;
+                    if (BinaryExt.Contains(Path.GetExtension(f))) { filesSkipped++; continue; }
+                    if (LooksBinary(f)) { filesSkipped++; continue; }
+
+                    filesScanned++;
+                    string content;
+                    try
+                    {
+                        // 读原始字节（单文件封顶），复用按行 UTF-8/GBK 自动识别解码
+                        byte[] data = ReadCappedBytes(f, PerFileCap);
+                        content = DecodeMixedOutput(data);
+                    }
+                    catch { continue; }
+
+                    string[] lines = content.Split('\n');
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        string line = lines[i];
+                        if (line.Length > 0 && line[line.Length - 1] == '\r') line = line.Substring(0, line.Length - 1);
+                        if (!match(line)) continue;
+
+                        string shown = line.Length > 400 ? line.Substring(0, 400) + "…" : line;
+                        sb.Append(f).Append(':').Append(i + 1).Append(": ").Append(shown).Append('\n');
+                        hits++;
+                        if (hits >= maxResults || sb.Length > MaxOutputChars) { truncated = true; break; }
+                    }
+                    if (truncated) break;
+                }
+
+                if (hits == 0)
+                {
+                    string extra = filesScanned == 0 && filesSkipped > 0 ? "（扫描范围内只有二进制文件，已跳过 " + filesSkipped + " 个）" : "（无命中）";
+                    return AgentToolResult.Ok(extra);
+                }
+
+                var head = new StringBuilder();
+                head.Append("（扫描 ").Append(filesScanned).Append(" 个文本文件");
+                if (filesSkipped > 0) head.Append("，跳过 ").Append(filesSkipped).Append(" 个二进制文件");
+                head.Append("，命中 ").Append(hits).Append(" 行）\n");
+                if (truncated) head.Append("…（结果已截断，请缩小 path 范围、加 glob 或提高 max_results 再搜）\n");
+                return AgentToolResult.Ok(head + sb.ToString().TrimEnd('\n'));
+            }
+
+            /// <summary>安全的递归文件枚举：无权限目录跳过；.git 不进入。</summary>
+            private static IEnumerable<string> EnumerateFilesSafe(string dir)
+            {
+                string[] files, subdirs;
+                try { files = Directory.GetFiles(dir); } catch { yield break; }
+                try { subdirs = Directory.GetDirectories(dir); } catch { subdirs = new string[0]; }
+
+                foreach (string f in files) yield return f;
+                foreach (string d in subdirs)
+                {
+                    string dn;
+                    try { dn = Path.GetFileName(d); } catch { continue; }
+                    if (string.Equals(dn, ".git", StringComparison.OrdinalIgnoreCase)) continue;
+                    foreach (string f in EnumerateFilesSafe(d)) yield return f;
+                }
+            }
+
+            /// <summary>读文件前 cap 字节（超出截断，扫描场景不需要尾部）。</summary>
+            private static byte[] ReadCappedBytes(string path, int cap)
+            {
+                using (var fs = File.OpenRead(path))
+                {
+                    int n = (int)Math.Min(cap, fs.Length);
+                    var buf = new byte[n];
+                    int read = 0;
+                    while (read < n)
+                    {
+                        int r = fs.Read(buf, read, n - read);
+                        if (r <= 0) break;
+                        read += r;
+                    }
+                    if (read < n) Array.Resize(ref buf, read);
+                    return buf;
+                }
+            }
+
+            /// <summary>嗅探文件头 4KB：含 NUL 字节视为二进制（UTF-16 文本也会命中，跳过可接受）。</summary>
+            private static bool LooksBinary(string path)
+            {
+                try
+                {
+                    using (var fs = File.OpenRead(path))
+                    {
+                        int n = (int)Math.Min(4096, fs.Length);
+                        var buf = new byte[n];
+                        int read = 0;
+                        while (read < n)
+                        {
+                            int r = fs.Read(buf, read, n - read);
+                            if (r <= 0) break;
+                            read += r;
+                        }
+                        for (int i = 0; i < read; i++) if (buf[i] == 0) return true;
+                    }
+                }
+                catch { return true; }
+                return false;
             }
         }
 
@@ -705,10 +967,149 @@ namespace OoorFunc.Core
             }
         }
 
+        /// <summary>领域只读工具：列出本机模型库（内置模型目录下的 .gguf，含大小与多模态投影标注）。</summary>
+        private sealed class ListModelsTool : IAgentTool
+        {
+            public string Name { get { return "list_models"; } }
+            public string Description
+            {
+                get
+                {
+                    return "列出 ooor 本机模型库：" + CoreEnv.ModelsDir + " 下的全部 .gguf 文件（含大小，标注多模态投影 mmproj 文件）。" +
+                           "可选 keyword 按文件名过滤。管理器中引用的外部目录不在扫描范围；选择要用的模型后，相关信息可从 get_app_paths / list_directory 获取。";
+                }
+            }
+            public IDictionary<string, object> ParametersSchema
+            {
+                get
+                {
+                    return new Dictionary<string, object>
+                    {
+                        { "type", "object" },
+                        { "properties", new Dictionary<string, object>
+                            {
+                                { "keyword", new Dictionary<string, object> { { "type", "string" }, { "description", "文件名过滤关键词（不区分大小写的包含匹配），可省略" } } }
+                            }
+                        }
+                    };
+                }
+            }
+            public AgentToolResult Execute(IDictionary<string, object> args)
+            {
+                string root = CoreEnv.ModelsDir;
+                if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+                    return AgentToolResult.Err("模型目录不存在：" + root + "（可在主界面设置模型目录，或把 .gguf 放入该目录）");
+
+                string keyword = (AsString(args, "keyword", false) ?? "").Trim();
+                var found = new List<string>();
+                try
+                {
+                    foreach (string f in Directory.EnumerateFiles(root, "*.gguf", SearchOption.AllDirectories))
+                    {
+                        if (keyword.Length > 0 &&
+                            f.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                        found.Add(f);
+                        if (found.Count >= 300) break;   // 防异常目录拖垮输出
+                    }
+                }
+                catch (Exception ex) { return AgentToolResult.Err("扫描模型目录失败：" + ex.Message); }
+
+                if (found.Count == 0)
+                    return AgentToolResult.Err(keyword.Length > 0
+                        ? "模型目录中没有匹配 \"" + keyword + "\" 的 .gguf 文件：" + root
+                        : "模型目录是空的：" + root);
+
+                var sb = new StringBuilder();
+                sb.Append("模型目录：").Append(root).Append('\n');
+                if (keyword.Length > 0) sb.Append("过滤关键词：").Append(keyword).Append('\n');
+                long total = 0;
+                for (int i = 0; i < found.Count; i++)
+                {
+                    string f = found[i];
+                    long len = 0;
+                    try { len = new FileInfo(f).Length; } catch { }
+                    total += len;
+                    string rel;
+                    try { rel = f.Substring(root.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar); }
+                    catch { rel = f; }
+                    string tag = Path.GetFileName(f).StartsWith("mmproj", StringComparison.OrdinalIgnoreCase)
+                        ? "　[多模态投影]" : "";
+                    sb.Append(i + 1).Append(". ").Append(rel).Append("　").Append(FormatBytes(len)).Append(tag).Append('\n');
+                }
+                sb.Append("（共 ").Append(found.Count).Append(" 个文件，合计 ").Append(FormatBytes(total)).Append('）');
+                return AgentToolResult.Ok(sb.ToString());
+            }
+
+            private static string FormatBytes(long b)
+            {
+                if (b >= 1073741824L) return (b / 1073741824.0).ToString("F2") + " GB";
+                if (b >= 1048576) return (b / 1048576.0).ToString("F1") + " MB";
+                if (b >= 1024) return (b / 1024.0).ToString("F1") + " KB";
+                return b + " B";
+            }
+        }
+
+        /// <summary>领域只读工具：列出已下载的 llama.cpp 运行版本与当前选中版本。</summary>
+        private sealed class ListLlamaVersionsTool : IAgentTool
+        {
+            public string Name { get { return "list_llama_versions"; } }
+            public string Description
+            {
+                get
+                {
+                    return "列出已下载的 llama.cpp 运行版本（llama-bin 目录下的子目录，标注哪个含 llama-server.exe）与当前选中版本。无参数。" +
+                           "只做查看；切换版本请在主界面操作。";
+                }
+            }
+            public IDictionary<string, object> ParametersSchema
+            {
+                get
+                {
+                    return new Dictionary<string, object>
+                    {
+                        { "type", "object" },
+                        { "properties", new Dictionary<string, object>() }
+                    };
+                }
+            }
+            public AgentToolResult Execute(IDictionary<string, object> args)
+            {
+                string root = CoreEnv.LlamaBinsDir;
+                if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+                    return AgentToolResult.Err("llama 版本目录不存在：" + root + "（尚未下载过任何版本）");
+
+                string selected = null;
+                try { selected = CoreEnv.GetSelectedVersion(); } catch { }
+
+                string[] dirs;
+                try { dirs = Directory.GetDirectories(root); }
+                catch (Exception ex) { return AgentToolResult.Err("扫描版本目录失败：" + ex.Message); }
+                Array.Sort(dirs, StringComparer.OrdinalIgnoreCase);
+
+                if (dirs.Length == 0)
+                    return AgentToolResult.Err("llama 版本目录是空的：" + root);
+
+                var sb = new StringBuilder();
+                sb.Append("版本目录：").Append(root).Append('\n');
+                foreach (string d in dirs)
+                {
+                    string name = Path.GetFileName(d);
+                    bool hasServer = false;
+                    try { hasServer = File.Exists(Path.Combine(d, "llama-server.exe")); } catch { }
+                    sb.Append("- ").Append(name)
+                      .Append(hasServer ? "　[含 llama-server]" : "")
+                      .Append(name == selected ? "　← 当前选中" : "")
+                      .Append('\n');
+                }
+                sb.Append("当前选中版本：").Append(string.IsNullOrEmpty(selected) ? "(未选择)" : selected);
+                return AgentToolResult.Ok(sb.ToString());
+            }
+        }
+
         private sealed class WriteFileTool : IAgentTool
         {
             public string Name { get { return "write_file"; } }
-            public string Description { get { return "把文本写入文件（覆盖已有文件，UTF-8；目录不存在会自动创建）。高危：默认弹窗请用户确认。"; } }
+            public string Description { get { return "把文本写入文件（覆盖已有文件，UTF-8；文件不存在会自动创建）。高危：默认弹窗请用户确认。"; } }
             public IDictionary<string, object> ParametersSchema
             {
                 get
@@ -719,8 +1120,8 @@ namespace OoorFunc.Core
                         { "properties", new Dictionary<string, object>
                             {
                                 { "path", new Dictionary<string, object> { { "type", "string" } } },
-                                { "content", new Dictionary<string, object> { { "type", "string" } } },
-                                { "confirm", ConfirmParamSchema() }
+                                { "confirm", ConfirmParamSchema() },
+                                { "content", new Dictionary<string, object> { { "type", "string" } } }
                             }
                         },
                         { "required", new[] { "path", "content" } }
@@ -732,6 +1133,7 @@ namespace OoorFunc.Core
             private readonly AgentTurnLog _log;
             public WriteFileTool(AgentOptions opt, AgentConfirm confirm, AgentTurnLog log)
             { _opt = opt; _confirm = confirm; _log = log; }
+
             public AgentToolResult Execute(IDictionary<string, object> args)
             {
                 string p = AsString(args, "path", true);
@@ -759,6 +1161,108 @@ namespace OoorFunc.Core
                     return AgentToolResult.Ok("已写入 " + content.Length + " 字符到 " + p);
                 }
                 catch (Exception ex) { return AgentToolResult.Err("写入失败：" + ex.Message); }
+            }
+        }
+
+        /// <summary>
+        /// 局部精确替换：只改 old_text 命中的片段，不必整文件重写（省 token、避免误伤其他内容）。
+        /// old_text 必须在文件中唯一出现；多处都要改时传 replace_all=true。UTF-8 读写。
+        /// </summary>
+        private sealed class EditFileTool : IAgentTool
+        {
+            public string Name { get { return "edit_file"; } }
+            public string Description
+            {
+                get
+                {
+                    return "对已存在文件做精确的局部文本替换（只改命中片段，不需要重写整个文件，适合改代码）。" +
+                           "old_text 必须与文件内容【完全一致】（含缩进换行）且在文件中唯一出现；匹配不到或匹配到多处都会报错；" +
+                           "确实要全部替换时传 replace_all=true。new_text 为空字符串表示删除该片段。UTF-8。高危：默认弹窗请用户确认。";
+                }
+            }
+            public IDictionary<string, object> ParametersSchema
+            {
+                get
+                {
+                    return new Dictionary<string, object>
+                    {
+                        { "type", "object" },
+                        { "properties", new Dictionary<string, object>
+                            {
+                                { "path", new Dictionary<string, object> { { "type", "string" }, { "description", "要修改的文件（绝对路径或相对沙盒根的路径）" } } },
+                                { "old_text", new Dictionary<string, object> { { "type", "string" }, { "description", "要被替换的原文，必须与文件中内容完全一致（含缩进、换行）" } } },
+                                { "new_text", new Dictionary<string, object> { { "type", "string" }, { "description", "替换后的文本；传空字符串表示删除 old_text" } } },
+                                { "replace_all", new Dictionary<string, object> { { "type", "boolean" }, { "description", "是否替换全部命中处，默认 false（要求唯一命中）" } } },
+                                { "confirm", ConfirmParamSchema() }
+                            }
+                        },
+                        { "required", new[] { "path", "old_text" } }
+                    };
+                }
+            }
+            private readonly AgentOptions _opt;
+            private readonly AgentConfirm _confirm;
+            private readonly AgentTurnLog _log;
+            public EditFileTool(AgentOptions opt, AgentConfirm confirm, AgentTurnLog log)
+            { _opt = opt; _confirm = confirm; _log = log; }
+
+            public AgentToolResult Execute(IDictionary<string, object> args)
+            {
+                string p = AsString(args, "path", true);
+                string oldText = AsString(args, "old_text", true);
+                string newText = AsString(args, "new_text", false) ?? "";
+                bool replaceAll = AsBool(args, "replace_all", false);
+                bool wantConfirm = AsBool(args, "confirm", false);
+                p = _opt.ResolveAllowed(p);
+
+                if (!File.Exists(p)) return AgentToolResult.Err("文件不存在：" + p);
+                if (oldText.Length == 0) return AgentToolResult.Err("old_text 不能为空");
+
+                string text;
+                try { text = File.ReadAllText(p, new UTF8Encoding(false)); }
+                catch (Exception ex) { return AgentToolResult.Err("读取失败：" + ex.Message); }
+
+                // 统计出现次数（逐次 IndexOf，大小写敏感，要求模型给精确原文）
+                int count = 0;
+                int idx = -1;
+                int searchFrom = 0;
+                while (true)
+                {
+                    int found = text.IndexOf(oldText, searchFrom, StringComparison.Ordinal);
+                    if (found < 0) break;
+                    if (idx < 0) idx = found;
+                    count++;
+                    searchFrom = found + oldText.Length;
+                }
+
+                if (count == 0)
+                    return AgentToolResult.Err("文件中找不到与 old_text 完全一致的片段（注意缩进、换行、标点必须完全一致），请先 read_file 核对");
+                if (count > 1 && !replaceAll)
+                    return AgentToolResult.Err("old_text 在文件中出现了 " + count + " 处，不唯一。请加长 old_text 保证唯一，或传 replace_all=true 全部替换");
+
+                string preview = "修改文件：" + p + "\n替换处数：" + (replaceAll ? count.ToString() : "1") +
+                                 "\n\n--- 原文 ---\n" + Clip(oldText) +
+                                 "\n\n--- 改为 ---\n" + Clip(newText);
+                if (!AskConfirm(_opt, _confirm, wantConfirm, "请您确认是否继续执行敏感操作？", preview))
+                    return AgentToolResult.Err("用户拒绝修改");
+
+                try
+                {
+                    string result = replaceAll
+                        ? text.Replace(oldText, newText)
+                        : text.Substring(0, idx) + newText + text.Substring(idx + oldText.Length);
+                    File.WriteAllText(p, result, new UTF8Encoding(false));
+                    _log?.RecordWritten(p);
+                    return AgentToolResult.Ok("已替换 " + (replaceAll ? count + " 处" : "1 处") + "：" + p);
+                }
+                catch (Exception ex) { return AgentToolResult.Err("写入失败：" + ex.Message); }
+            }
+
+            /// <summary>确认框预览过长时截断，避免弹窗撑爆屏幕。</summary>
+            private static string Clip(string s)
+            {
+                if (string.IsNullOrEmpty(s)) return "（空）";
+                return s.Length > 800 ? s.Substring(0, 800) + "…（共 " + s.Length + " 字符）" : s;
             }
         }
 
@@ -807,6 +1311,192 @@ namespace OoorFunc.Core
             }
         }
 
+        private sealed class MoveFileTool : IAgentTool
+        {
+            public string Name { get { return "move_file"; } }
+            public string Description
+            {
+                get
+                {
+                    return "移动或重命名文件（不支持移动目录；目标已存在会报错，不会覆盖）。" +
+                           "源路径和目标路径都必须在沙盒白名单内（先调用 list_roots 确认）；" +
+                           "相对路径会自动落到临时工作目录 temp 下。高危：默认弹窗请用户确认。";
+                }
+            }
+            public IDictionary<string, object> ParametersSchema
+            {
+                get
+                {
+                    return new Dictionary<string, object>
+                    {
+                        { "type", "object" },
+                        { "properties", new Dictionary<string, object>
+                            {
+                                { "path", new Dictionary<string, object> { { "type", "string" }, { "description", "源文件路径（沙盒白名单内）" } } },
+                                { "dest", new Dictionary<string, object> { { "type", "string" }, { "description", "目标路径（须在沙盒白名单内，且不能已存在）" } } },
+                                { "confirm", ConfirmParamSchema() }
+                            }
+                        },
+                        { "required", new[] { "path", "dest" } }
+                    };
+                }
+            }
+            private readonly AgentOptions _opt;
+            private readonly AgentConfirm _confirm;
+            private readonly AgentTurnLog _log;
+            public MoveFileTool(AgentOptions opt, AgentConfirm confirm, AgentTurnLog log)
+            { _opt = opt; _confirm = confirm; _log = log; }
+
+            public AgentToolResult Execute(IDictionary<string, object> args)
+            {
+                string src;
+                string dst;
+                try
+                {
+                    src = _opt.ResolveAllowed(AsString(args, "path", true));
+                    dst = _opt.ResolveAllowed(AsString(args, "dest", true));
+                }
+                catch (Exception ex) { return AgentToolResult.Err(ex.Message); }
+                if (!File.Exists(src)) return AgentToolResult.Err("源文件不存在：" + src);
+                if (File.Exists(dst)) return AgentToolResult.Err("目标已存在，未做修改：" + dst + "（如需替换请先删除目标文件）");
+
+                bool wantConfirm = AsBool(args, "confirm", false);
+                if (!AskConfirm(_opt, _confirm, wantConfirm, "请您确认是否继续执行敏感操作？", "移动文件：\n" + src + "\n→ " + dst))
+                    return AgentToolResult.Err("用户拒绝移动文件");
+
+                try
+                {
+                    string dir = Path.GetDirectoryName(dst);
+                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                    File.Move(src, dst);
+                    _log?.RecordWritten(dst);
+                    return AgentToolResult.Ok("已移动：" + src + "\n→ " + dst);
+                }
+                catch (Exception ex) { return AgentToolResult.Err("移动失败：" + ex.Message); }
+            }
+        }
+
+        private sealed class CopyFileTool : IAgentTool
+        {
+            public string Name { get { return "copy_file"; } }
+            public string Description
+            {
+                get
+                {
+                    return "复制文件（不支持复制目录）。源路径和目标路径都必须在沙盒白名单内（先调用 list_roots 确认）；" +
+                           "目标已存在时须传 overwrite=true 才会覆盖。相对路径会自动落到临时工作目录 temp 下。";
+                }
+            }
+            public IDictionary<string, object> ParametersSchema
+            {
+                get
+                {
+                    return new Dictionary<string, object>
+                    {
+                        { "type", "object" },
+                        { "properties", new Dictionary<string, object>
+                            {
+                                { "path", new Dictionary<string, object> { { "type", "string" }, { "description", "源文件路径（沙盒白名单内）" } } },
+                                { "dest", new Dictionary<string, object> { { "type", "string" }, { "description", "目标路径（须在沙盒白名单内）" } } },
+                                { "overwrite", new Dictionary<string, object> { { "type", "boolean" }, { "description", "目标已存在时是否覆盖，默认 false（直接报错）" } } },
+                                { "confirm", ConfirmParamSchema() }
+                            }
+                        },
+                        { "required", new[] { "path", "dest" } }
+                    };
+                }
+            }
+            private readonly AgentOptions _opt;
+            private readonly AgentConfirm _confirm;
+            private readonly AgentTurnLog _log;
+            public CopyFileTool(AgentOptions opt, AgentConfirm confirm, AgentTurnLog log)
+            { _opt = opt; _confirm = confirm; _log = log; }
+
+            public AgentToolResult Execute(IDictionary<string, object> args)
+            {
+                string src;
+                string dst;
+                try
+                {
+                    src = _opt.ResolveAllowed(AsString(args, "path", true));
+                    dst = _opt.ResolveAllowed(AsString(args, "dest", true));
+                }
+                catch (Exception ex) { return AgentToolResult.Err(ex.Message); }
+                if (!File.Exists(src)) return AgentToolResult.Err("源文件不存在：" + src);
+                bool overwrite = AsBool(args, "overwrite", false);
+                if (File.Exists(dst) && !overwrite)
+                    return AgentToolResult.Err("目标已存在，未做修改：" + dst + "（确需覆盖请传 overwrite=true）");
+
+                bool wantConfirm = AsBool(args, "confirm", false);
+                if (!AskConfirm(_opt, _confirm, wantConfirm, "请您确认是否继续执行敏感操作？",
+                        "复制文件：\n" + src + "\n→ " + dst + (File.Exists(dst) ? "（覆盖已有文件）" : "")))
+                    return AgentToolResult.Err("用户拒绝复制文件");
+
+                try
+                {
+                    string dir = Path.GetDirectoryName(dst);
+                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                    File.Copy(src, dst, overwrite);
+                    _log?.RecordWritten(dst);
+                    return AgentToolResult.Ok("已复制：" + src + "\n→ " + dst + "（" + new FileInfo(dst).Length + " 字节）");
+                }
+                catch (Exception ex) { return AgentToolResult.Err("复制失败：" + ex.Message); }
+            }
+        }
+
+        private sealed class MakeDirectoryTool : IAgentTool
+        {
+            public string Name { get { return "make_directory"; } }
+            public string Description
+            {
+                get
+                {
+                    return "创建目录（多级一次创建；已存在时直接成功，不报错）。路径须在沙盒白名单内（先调用 list_roots 确认）；" +
+                           "相对路径会自动落到临时工作目录 temp 下。";
+                }
+            }
+            public IDictionary<string, object> ParametersSchema
+            {
+                get
+                {
+                    return new Dictionary<string, object>
+                    {
+                        { "type", "object" },
+                        { "properties", new Dictionary<string, object>
+                            {
+                                { "path", new Dictionary<string, object> { { "type", "string" }, { "description", "要创建的目录路径（沙盒白名单内）" } } },
+                                { "confirm", ConfirmParamSchema() }
+                            }
+                        },
+                        { "required", new[] { "path" } }
+                    };
+                }
+            }
+            private readonly AgentOptions _opt;
+            private readonly AgentConfirm _confirm;
+            public MakeDirectoryTool(AgentOptions opt, AgentConfirm confirm) { _opt = opt; _confirm = confirm; }
+
+            public AgentToolResult Execute(IDictionary<string, object> args)
+            {
+                string p;
+                try { p = _opt.ResolveAllowed(AsString(args, "path", true)); }
+                catch (Exception ex) { return AgentToolResult.Err(ex.Message); }
+
+                if (Directory.Exists(p)) return AgentToolResult.Ok("目录已存在：" + p);
+
+                bool wantConfirm = AsBool(args, "confirm", false);
+                if (!AskConfirm(_opt, _confirm, wantConfirm, "请您确认是否继续执行敏感操作？", "创建目录：" + p))
+                    return AgentToolResult.Err("用户拒绝创建目录");
+
+                try
+                {
+                    Directory.CreateDirectory(p);
+                    return AgentToolResult.Ok("已创建目录：" + p);
+                }
+                catch (Exception ex) { return AgentToolResult.Err("创建失败：" + ex.Message); }
+            }
+        }
+
         private sealed class RunCommandTool : IAgentTool
         {
             public string Name { get { return "run_command"; } }
@@ -814,10 +1504,11 @@ namespace OoorFunc.Core
             {
                 get
                 {
-                    return "在 cmd.exe 里执行一条命令（同步等待、捕获输出、超时强杀）。当前目录固定为沙盒临时工作目录 "
+                    return "在 PowerShell 里执行一条命令（同步等待、捕获输出、超时强杀）。当前目录固定为沙盒临时工作目录 "
                          + _opt.TempDir + "（即 create_file 相对路径的落地目录），命令里用相对路径即可操作其中文件。"
-                         + "打开文件/网址用 start 时，带引号的路径前必须先给空标题，写 start \"\" \"文件完整路径\"；"
-                         + "需要跑多行脚本请改用 execute_script。";
+                         + "注意：这是 PowerShell 宿主，语法与 cmd 不同——环境变量用 $env:NAME（不是 %NAME%），"
+                         + "命令串联用 ; 或换行（PS 5.1 不支持 &&），打开文件/网址用 Start-Process " + "\"路径\"" + "（不是 start），"
+                         + "管道传递的是对象不是纯文本；需要跑多行脚本请改用 execute_script。";
                 }
             }
             public IDictionary<string, object> ParametersSchema
@@ -846,7 +1537,6 @@ namespace OoorFunc.Core
             public AgentToolResult Execute(IDictionary<string, object> args)
             {
                 string cmd = AsString(args, "command", true);
-                cmd = FixStartTitle(cmd);   // start "带引号路径" → start "" "路径"，否则引号内容被当成窗口标题
                 int timeoutSec = (int)_opt.CommandTimeout.TotalSeconds;
                 object ts;
                 if (args != null && args.TryGetValue("timeout_seconds", out ts) && ts != null)
@@ -856,12 +1546,17 @@ namespace OoorFunc.Core
                 }
 
                 // 粗粒度黑名单：极易误操作的命令在 UI 端弹窗时让用户二次确认
+                // 覆盖 cmd 风格（format / del /s）与 PowerShell 风格（Remove-Item -Recurse / Stop-Computer）
                 string lower = (cmd ?? "").ToLowerInvariant();
                 bool highRisk =
                     lower.Contains("format ") || lower.Contains("rmdir /s") || lower.Contains("rd /s") ||
                     lower.Contains("del /f /s") || lower.Contains("del /s /q") || lower.Contains("reg delete") ||
                     lower.Contains("net user") || lower.Contains("net stop") || lower.Contains("bcdedit") ||
-                    lower.Contains("diskpart") || lower.Contains("shutdown") || lower.Contains("cipher /w");
+                    lower.Contains("diskpart") || lower.Contains("shutdown") || lower.Contains("cipher /w") ||
+                    lower.Contains("remove-item -recurse") || lower.Contains("rm -recurse") ||
+                    lower.Contains("del -recurse") || lower.Contains("stop-computer") ||
+                    lower.Contains("restart-computer") || lower.Contains("format-volume") ||
+                    lower.Contains("clear-disk") || lower.Contains("stop-service") || lower.Contains("stop-process -force");
                 string title = "请您确认是否继续执行敏感操作？";
                 bool wantConfirm = AsBool(args, "confirm", false);
                 if (!AskConfirm(_opt, _confirm, wantConfirm, title, (highRisk ? "⚠ 危险命令\n" : "") + "执行命令：" + cmd)) return AgentToolResult.Err("用户拒绝执行");
@@ -879,13 +1574,14 @@ namespace OoorFunc.Core
 
                     var psi = new ProcessStartInfo
                     {
-                        FileName = "cmd.exe",
-                        Arguments = "/d /c " + cmd,
+                        FileName = "powershell.exe",
+                        Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command -",
                         WorkingDirectory = workDir ?? "",
                         UseShellExecute = false,
                         CreateNoWindow = true,
                         RedirectStandardOutput = true,
-                        RedirectStandardError = true
+                        RedirectStandardError = true,
+                        RedirectStandardInput = true
                     };
                     // 命令里若调用 python：让其 stdio/文件默认走 UTF-8（输出由 C# 端按行自动识别编码）
                     psi.EnvironmentVariables["PYTHONIOENCODING"] = "utf-8";
@@ -893,8 +1589,22 @@ namespace OoorFunc.Core
                     using (var p = Process.Start(psi))
                     {
                         if (p == null) return AgentToolResult.Err("进程启动失败");
-                        // 读原始字节并按行自动识别 UTF-8/GBK：重定向管道无控制台，
-                        // chcp 不生效，cmd 自身的中文错误信息始终是系统 OEM 码页（GBK）
+                        // 通过 stdin 传入命令（-Command - 模式）：避免 -Command "脚本" 的引号转义问题，
+                        // 命令字符串原封不动地交给 PS 解析器，管道、引号、$ 符号都按 PS 语义处理
+                        try
+                        {
+                            // PowerShell 5.1 默认按 UTF-16 读 stdin；写 UTF-8 会乱码。
+                            // 用 ASCII 写入命令文本（命令本身通常是 ASCII，中文参数少见；
+                            // 若含中文，PS stdin 编码限制是已知问题，建议改用 execute_script 落文件再跑）
+                            var stdinEnc = new UTF8Encoding(false);
+                            byte[] cmdBytes = stdinEnc.GetBytes(cmd + "\n");
+                            p.StandardInput.BaseStream.Write(cmdBytes, 0, cmdBytes.Length);
+                            p.StandardInput.BaseStream.Flush();
+                            p.StandardInput.Close();
+                        }
+                        catch { }
+                        // 读原始字节并按行自动识别 UTF-8/GBK：PS 输出默认 UTF-16，
+                        // 但 python 子进程仍是 UTF-8；按行识别能兼容两者混排
                         string outText = RunAndCapture(p, timeoutSec * 1000);
                         // 记录本回合实际运行/打开的文件（提取失败不影响结果）
                         try
@@ -1072,9 +1782,10 @@ namespace OoorFunc.Core
                         { "properties", new Dictionary<string, object>
                             {
                                 { "path", new Dictionary<string, object> { { "type", "string" }, { "description", "文件路径：绝对路径须在沙盒白名单内；纯文件名或相对路径会自动落到临时工作目录 temp 下" } } },
-                                { "content", new Dictionary<string, object> { { "type", "string" }, { "description", "写入的文本内容" } } },
                                 { "overwrite", new Dictionary<string, object> { { "type", "boolean" }, { "description", "目标已存在时是否覆盖，默认 false（直接报错）" } } },
-                                { "confirm", new Dictionary<string, object> { { "type", "boolean" }, { "description", "是否先请用户确认，默认 false（新建文件通常无需打扰用户）" } } }
+                                { "confirm", new Dictionary<string, object> { { "type", "boolean" }, { "description", "是否先请用户确认，默认 false（新建文件通常无需打扰用户）" } } },
+                                { "content", new Dictionary<string, object> { { "type", "string" }, { "description", "写入的文本内容" } } }
+                               
                             }
                         },
                         { "required", new[] { "path", "content" } }
@@ -1320,6 +2031,106 @@ namespace OoorFunc.Core
             private static string Quote(string s)
             {
                 return "\"" + (s ?? "").Replace("\"", "\\\"") + "\"";
+            }
+        }
+
+        /// <summary>
+        /// 下载 URL 到沙盒内文件（流式写盘，适合大文件如 .gguf 模型）。
+        /// 与 fetch_url 的区别：fetch_url 只把网页文本回给模型读，本工具把文件落到磁盘。
+        /// 仅在用户开启「允许联网」时注册；目标路径受沙盒白名单约束。
+        /// </summary>
+        private sealed class DownloadFileTool : IAgentTool
+        {
+            public string Name { get { return "download_file"; } }
+            public string Description
+            {
+                get
+                {
+                    return "下载一个 http/https 文件到本地（流式写盘，支持大文件如 .gguf / .zip）。" +
+                           "与 fetch_url 的区别：fetch_url 返回网页文本供阅读，本工具把文件保存到磁盘。" +
+                           "path 只写文件名或相对路径时自动落到临时工作目录 temp 下；目标已存在须传 overwrite=true。" +
+                           "下载模型大文件时建议先确认目标磁盘剩余空间，并给足 timeout_seconds。";
+                }
+            }
+            public IDictionary<string, object> ParametersSchema
+            {
+                get
+                {
+                    return new Dictionary<string, object>
+                    {
+                        { "type", "object" },
+                        { "properties", new Dictionary<string, object>
+                            {
+                                { "url", new Dictionary<string, object> { { "type", "string" }, { "description", "要下载的完整网址（http/https）" } } },
+                                { "path", new Dictionary<string, object> { { "type", "string" }, { "description", "保存路径（沙盒白名单内）；省略时自动按 URL 文件名落到临时工作目录 temp 下" } } },
+                                { "overwrite", new Dictionary<string, object> { { "type", "boolean" }, { "description", "目标已存在时是否覆盖，默认 false（直接报错）" } } },
+                                { "timeout_seconds", new Dictionary<string, object> { { "type", "integer" }, { "description", "超时秒数，默认 600，最大 7200；大文件给足时间" } } }
+                            }
+                        },
+                        { "required", new[] { "url" } }
+                    };
+                }
+            }
+            private readonly AgentOptions _opt;
+            private readonly AgentTurnLog _log;
+            public DownloadFileTool(AgentOptions opt, AgentTurnLog log) { _opt = opt; _log = log; }
+
+            public AgentToolResult Execute(IDictionary<string, object> args)
+            {
+                string url = (AsString(args, "url", true) ?? "").Trim();
+                if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                    !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    return AgentToolResult.Err("仅支持 http/https 网址：" + url);
+
+                int timeout = AsInt(args, "timeout_seconds", 600, 30, 7200);
+                bool overwrite = AsBool(args, "overwrite", false);
+
+                string p = AsString(args, "path", false);
+                if (string.IsNullOrEmpty(p))
+                {
+                    // 未给目标路径：从 URL 推断文件名（去掉 query），落在临时工作目录
+                    string name = url;
+                    int q = name.IndexOfAny(new[] { '?', '#' });
+                    if (q >= 0) name = name.Substring(0, q);
+                    name = name.Substring(name.LastIndexOf('/') + 1);
+                    if (name.Length == 0 || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                        name = "download_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                    try { p = Path.Combine(_opt.TempDir, name); } catch { p = name; }
+                }
+
+                string dst;
+                try { dst = _opt.ResolveAllowed(p); }
+                catch (Exception ex) { return AgentToolResult.Err(ex.Message); }
+                if (File.Exists(dst) && !overwrite)
+                    return AgentToolResult.Err("目标已存在，未做修改：" + dst + "（确需覆盖请传 overwrite=true）");
+
+                try
+                {
+                    string dir = Path.GetDirectoryName(dst);
+                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    long bytes = WebHttp.DownloadToFile(url, dst, timeout);
+                    sw.Stop();
+
+                    // 下载中断/超时会抛异常，走到这里说明完整落盘
+                    _log?.RecordWritten(dst);
+                    return AgentToolResult.Ok("已下载：" + url + "\n→ " + dst
+                        + "\n大小：" + FormatSize(bytes) + "　用时：" + (int)sw.Elapsed.TotalSeconds + " 秒");
+                }
+                catch (Exception ex)
+                {
+                    try { if (File.Exists(dst)) File.Delete(dst); } catch { }   // 清掉半截文件
+                    return AgentToolResult.Err(ex.Message);
+                }
+            }
+
+            private static string FormatSize(long bytes)
+            {
+                if (bytes >= 1073741824L) return (bytes / 1073741824.0).ToString("F2") + " GB";
+                if (bytes >= 1048576) return (bytes / 1048576.0).ToString("F1") + " MB";
+                if (bytes >= 1024) return (bytes / 1024.0).ToString("F1") + " KB";
+                return bytes + " 字节";
             }
         }
     }

@@ -128,6 +128,59 @@ namespace OoorFunc.Core
             // 3) 兜底：UTF-8（坏字节替换，不抛异常）
             return new UTF8Encoding(false, false);
         }
+
+        /// <summary>
+        /// GET 一个 URL 并把响应体流式写入目标文件（1MB 缓冲，不整块占内存，适合大文件）。
+        /// 独立 HttpClient（超时可按次设定；下载不需要共享 Cookie，不声明压缩避免服务器返回压缩流）。
+        /// 返回已写入字节数；失败抛异常。
+        /// </summary>
+        public static long DownloadToFile(string url, string destFile, int timeoutSeconds)
+        {
+            try { ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12; }
+            catch { }
+
+            try
+            {
+                using (var handler = new HttpClientHandler
+                {
+                    AllowAutoRedirect = true,
+                    AutomaticDecompression = DecompressionMethods.None
+                })
+                using (var client = new HttpClient(handler)
+                {
+                    Timeout = TimeSpan.FromSeconds(Math.Max(30, timeoutSeconds))
+                })
+                {
+                    try { client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent); } catch { }
+                    using (var resp = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult())
+                    {
+                        if (!resp.IsSuccessStatusCode)
+                            throw new InvalidOperationException("HTTP " + (int)resp.StatusCode + " " + resp.ReasonPhrase);
+
+                        using (var src = resp.Content.ReadAsStreamAsync().GetAwaiter().GetResult())
+                        using (var dst = new System.IO.FileStream(destFile, System.IO.FileMode.Create,
+                            System.IO.FileAccess.Write, System.IO.FileShare.None, 1024 * 1024))
+                        {
+                            byte[] buf = new byte[1024 * 1024];
+                            long total = 0;
+                            int n;
+                            while ((n = src.Read(buf, 0, buf.Length)) > 0)
+                            {
+                                dst.Write(buf, 0, n);
+                                total += n;
+                            }
+                            return total;
+                        }
+                    }
+                }
+            }
+            catch (InvalidOperationException) { throw; }
+            catch (Exception ex)
+            {
+                string msg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                throw new InvalidOperationException("下载失败（" + msg + "）");
+            }
+        }
     }
 
     /// <summary>联网工具的参数读取（模型可能给 "1" / true 等，统一容错）。</summary>

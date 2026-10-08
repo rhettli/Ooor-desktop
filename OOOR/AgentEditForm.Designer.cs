@@ -22,6 +22,7 @@ namespace ooor
         /// <summary>设计器支持所需方法 - 不要用代码编辑器改这里的内容。</summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.lblName = new System.Windows.Forms.Label();
             this.txtName = new System.Windows.Forms.TextBox();
             this.chkFullDev = new System.Windows.Forms.CheckBox();
@@ -38,6 +39,13 @@ namespace ooor
             this.btnCancel = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.txtUserPrompt = new System.Windows.Forms.TextBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.listViewWriteDir = new System.Windows.Forms.ListView();
+            this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.cmsWriteDir = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.tsmiAddDir = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiRemoveDir = new System.Windows.Forms.ToolStripMenuItem();
+            this.cmsWriteDir.SuspendLayout();
             this.SuspendLayout();
             // 
             // lblName
@@ -45,7 +53,7 @@ namespace ooor
             this.lblName.AutoSize = true;
             this.lblName.Location = new System.Drawing.Point(16, 20);
             this.lblName.Name = "lblName";
-            this.lblName.Size = new System.Drawing.Size(64, 24);
+            this.lblName.Size = new System.Drawing.Size(44, 17);
             this.lblName.TabIndex = 0;
             this.lblName.Text = "名称：";
             // 
@@ -53,7 +61,7 @@ namespace ooor
             // 
             this.txtName.Location = new System.Drawing.Point(20, 47);
             this.txtName.Name = "txtName";
-            this.txtName.Size = new System.Drawing.Size(544, 30);
+            this.txtName.Size = new System.Drawing.Size(544, 23);
             this.txtName.TabIndex = 1;
             // 
             // chkFullDev
@@ -80,7 +88,7 @@ namespace ooor
             this.lblModel.AutoSize = true;
             this.lblModel.Location = new System.Drawing.Point(16, 162);
             this.lblModel.Name = "lblModel";
-            this.lblModel.Size = new System.Drawing.Size(100, 24);
+            this.lblModel.Size = new System.Drawing.Size(68, 17);
             this.lblModel.TabIndex = 4;
             this.lblModel.Text = "默认模型：";
             // 
@@ -89,7 +97,7 @@ namespace ooor
             this.cmbModel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbModel.Location = new System.Drawing.Point(20, 189);
             this.cmbModel.Name = "cmbModel";
-            this.cmbModel.Size = new System.Drawing.Size(544, 32);
+            this.cmbModel.Size = new System.Drawing.Size(544, 25);
             this.cmbModel.TabIndex = 5;
             // 
             // lblPrompt
@@ -97,7 +105,7 @@ namespace ooor
             this.lblPrompt.AutoSize = true;
             this.lblPrompt.Location = new System.Drawing.Point(582, 20);
             this.lblPrompt.Name = "lblPrompt";
-            this.lblPrompt.Size = new System.Drawing.Size(118, 24);
+            this.lblPrompt.Size = new System.Drawing.Size(80, 17);
             this.lblPrompt.TabIndex = 6;
             this.lblPrompt.Text = "系统提示词：";
             // 
@@ -107,7 +115,7 @@ namespace ooor
             this.txtPrompt.Multiline = true;
             this.txtPrompt.Name = "txtPrompt";
             this.txtPrompt.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtPrompt.Size = new System.Drawing.Size(544, 310);
+            this.txtPrompt.Size = new System.Drawing.Size(544, 167);
             this.txtPrompt.TabIndex = 7;
             // 
             // lblTools
@@ -115,7 +123,7 @@ namespace ooor
             this.lblTools.AutoSize = true;
             this.lblTools.Location = new System.Drawing.Point(16, 238);
             this.lblTools.Name = "lblTools";
-            this.lblTools.Size = new System.Drawing.Size(136, 24);
+            this.lblTools.Size = new System.Drawing.Size(92, 17);
             this.lblTools.TabIndex = 8;
             this.lblTools.Text = "绑定内置函数：";
             // 
@@ -132,7 +140,7 @@ namespace ooor
             this.lblMcp.AutoSize = true;
             this.lblMcp.Location = new System.Drawing.Point(16, 509);
             this.lblMcp.Name = "lblMcp";
-            this.lblMcp.Size = new System.Drawing.Size(169, 24);
+            this.lblMcp.Size = new System.Drawing.Size(115, 17);
             this.lblMcp.TabIndex = 10;
             this.lblMcp.Text = "绑定 MCP 服务器：";
             // 
@@ -141,7 +149,7 @@ namespace ooor
             this.clbMcp.CheckOnClick = true;
             this.clbMcp.Location = new System.Drawing.Point(20, 542);
             this.clbMcp.Name = "clbMcp";
-            this.clbMcp.Size = new System.Drawing.Size(544, 193);
+            this.clbMcp.Size = new System.Drawing.Size(544, 184);
             this.clbMcp.TabIndex = 11;
             // 
             // btnOk
@@ -165,26 +173,72 @@ namespace ooor
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(582, 373);
+            this.label1.Location = new System.Drawing.Point(582, 243);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(172, 24);
+            this.label1.Size = new System.Drawing.Size(116, 17);
             this.label1.TabIndex = 14;
             this.label1.Text = "自定义系统提示词：";
             // 
             // txtUserPrompt
             // 
-            this.txtUserPrompt.Location = new System.Drawing.Point(586, 400);
+            this.txtUserPrompt.Location = new System.Drawing.Point(586, 270);
             this.txtUserPrompt.Multiline = true;
             this.txtUserPrompt.Name = "txtUserPrompt";
             this.txtUserPrompt.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtUserPrompt.Size = new System.Drawing.Size(544, 256);
+            this.txtUserPrompt.Size = new System.Drawing.Size(544, 220);
             this.txtUserPrompt.TabIndex = 15;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(583, 509);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(104, 17);
+            this.label2.TabIndex = 16;
+            this.label2.Text = "沙盒白名单目录：";
+            // 
+            // listViewWriteDir
+            // 
+            this.listViewWriteDir.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.columnHeader1});
+            this.listViewWriteDir.ContextMenuStrip = this.cmsWriteDir;
+            this.listViewWriteDir.FullRowSelect = true;
+            this.listViewWriteDir.GridLines = true;
+            this.listViewWriteDir.HideSelection = false;
+            this.listViewWriteDir.Location = new System.Drawing.Point(586, 542);
+            this.listViewWriteDir.Name = "listViewWriteDir";
+            this.listViewWriteDir.Size = new System.Drawing.Size(544, 143);
+            this.listViewWriteDir.TabIndex = 17;
+            this.listViewWriteDir.UseCompatibleStateImageBehavior = false;
+            this.listViewWriteDir.View = System.Windows.Forms.View.Details;
+            // 
+            // cmsWriteDir
+            // 
+            this.cmsWriteDir.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsmiAddDir,
+            this.tsmiRemoveDir});
+            this.cmsWriteDir.Name = "cmsWriteDir";
+            this.cmsWriteDir.Size = new System.Drawing.Size(111, 48);
+            // 
+            // tsmiAddDir
+            // 
+            this.tsmiAddDir.Name = "tsmiAddDir";
+            this.tsmiAddDir.Size = new System.Drawing.Size(110, 22);
+            this.tsmiAddDir.Text = "新增…";
+            // 
+            // tsmiRemoveDir
+            // 
+            this.tsmiRemoveDir.Name = "tsmiRemoveDir";
+            this.tsmiRemoveDir.Size = new System.Drawing.Size(110, 22);
+            this.tsmiRemoveDir.Text = "移除";
             // 
             // AgentEditForm
             // 
             this.AcceptButton = this.btnOk;
             this.CancelButton = this.btnCancel;
             this.ClientSize = new System.Drawing.Size(1147, 752);
+            this.Controls.Add(this.listViewWriteDir);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.txtUserPrompt);
             this.Controls.Add(this.lblName);
@@ -207,6 +261,7 @@ namespace ooor
             this.MinimizeBox = false;
             this.Name = "AgentEditForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.cmsWriteDir.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -232,5 +287,11 @@ namespace ooor
 
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox txtUserPrompt;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.ListView listViewWriteDir;
+        private System.Windows.Forms.ContextMenuStrip cmsWriteDir;
+        private System.Windows.Forms.ToolStripMenuItem tsmiAddDir;
+        private System.Windows.Forms.ToolStripMenuItem tsmiRemoveDir;
+        private System.Windows.Forms.ColumnHeader columnHeader1;
     }
 }

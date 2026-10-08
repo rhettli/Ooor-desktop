@@ -439,6 +439,62 @@ namespace OoorFunc.Core
             };
         }
 
+        /// <summary>调试模式：把即将发给模型的请求体打印到 stderr（时间戳 + messages 摘要 + 工具清单 + 完整 JSON）。</summary>
+        private void DumpDebugRequest(object req)
+        {
+            const string bar = "──────────────────────────────────────────────────────────";
+            Console.Error.WriteLine(bar);
+            Console.Error.WriteLine("[debug] " + DateTime.Now.ToString("HH:mm:ss.fff") + "  POST /v1/chat/completions");
+
+            // req 是 Dictionary<string, object>，提取关键字段做摘要
+            var dict = req as Dictionary<string, object>;
+            if (dict != null)
+            {
+                if (dict.TryGetValue("model", out object m)) Console.Error.WriteLine("[debug] model    = " + (m ?? ""));
+                if (dict.TryGetValue("temperature", out object t)) Console.Error.WriteLine("[debug] temp     = " + (t ?? ""));
+
+                // messages 摘要：role + content 长度 + 预览
+                if (dict.TryGetValue("messages", out object msgsObj) && msgsObj is IEnumerable seq)
+                {
+                    int mi = 0;
+                    foreach (object item in seq)
+                    {
+                        var md = item as Dictionary<string, object>;
+                        if (md == null) continue;
+                        string role = md.TryGetValue("role", out object r) ? (r ?? "").ToString() : "?";
+                        string content = md.TryGetValue("content", out object c) ? (c ?? "").ToString() : "";
+                        string preview = content.Length > 120 ? content.Substring(0, 120) + "…" : content;
+                        string tc = "";
+                        if (md.TryGetValue("tool_calls", out object tcObj))
+                            tc = "  tool_calls=" + _json.Serialize(tcObj);
+                        string tcid = md.TryGetValue("tool_call_id", out object tcId) ? "  tool_call_id=" + (tcId ?? "") : "";
+                        Console.Error.WriteLine("[debug]   msg[" + mi + "] " + role + " (" + content.Length + " chars)" + tcid + tc);
+                        Console.Error.WriteLine("[debug]         " + preview.Replace("\n", "\\n").Replace("\r", "\\r"));
+                        mi++;
+                    }
+                    Console.Error.WriteLine("[debug] messages = " + mi + " 条");
+                }
+
+                // tools 清单
+                if (dict.TryGetValue("tools", out object toolsObj))
+                {
+                    var toolsJson = _json.Serialize(toolsObj);
+                    var toolsArr = _json.Deserialize<List<Dictionary<string, object>>>(toolsJson) ?? new List<Dictionary<string, object>>();
+                    Console.Error.WriteLine("[debug] tools    = " + toolsArr.Count + " 个");
+                    foreach (var td in toolsArr)
+                    {
+                        var fn = td.TryGetValue("function", out object fno) ? fno as Dictionary<string, object> : null;
+                        string name = fn != null && fn.TryGetValue("name", out object n) ? (n ?? "").ToString() : "?";
+                        Console.Error.WriteLine("[debug]   - " + name);
+                    }
+                }
+            }
+
+            // 完整 JSON（可读化：单行 → 不格式化，避免太长时截断）
+            Console.Error.WriteLine("[debug] ---- full request json ----");
+            Console.Error.WriteLine(_json.Serialize(req));
+        }
+
         private sealed class ChatTurnResult
         {
             public string Content = "";
@@ -459,6 +515,13 @@ namespace OoorFunc.Core
             {
                 Content = new StringContent(_json.Serialize(req), new UTF8Encoding(false), "application/json")
             };
+
+            // 调试模式：发送前把请求体打印到 stderr（系统消息 + 工具清单 + 参数）
+            if (Options.DebugMode)
+            {
+                try { DumpDebugRequest(req); }
+                catch { /* 调试输出失败不应中断对话 */ }
+            }
 
             using (HttpResponseMessage resp = await _http.SendAsync(httpReq, HttpCompletionOption.ResponseHeadersRead, ct))
             {

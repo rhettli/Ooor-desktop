@@ -70,6 +70,7 @@ namespace Ooor_cli
             string argSession = null;  // --session <id>：从 LiteDB 恢复指定会话接着聊
             string argModel = null;    // --model <path>：期望模型（记录用；实际以服务已加载模型为准）
             string argAgent = null;    // --agent <name>：以指定 Agent 的系统提示词开始一个空白新对话
+            bool debug = false;        // --debug：调试模式，打印发给模型的消息和细节
             var extraRoots = new List<string>();
             for (int i = 0; i < argv.Length; i++)
             {
@@ -77,6 +78,7 @@ namespace Ooor_cli
                 if (a == "--help" || a == "-h" || a == "/?") { PrintUsage(); return 0; }
                 if (a == "--trust" || a == "-y") { trust = true; continue; }
                 if (a == "--pause") { pause = true; continue; }
+                if (a == "--debug") { debug = true; continue; }
                 if (a == "--web" || a == "--gui") { webMode = true; continue; }
                 if (a == "--devtools") { devTools = true; continue; }
                 if (a == "--base" && i + 1 < argv.Length) { argBase = argv[++i]; continue; }
@@ -88,6 +90,27 @@ namespace Ooor_cli
                 PrintUsage();
                 return 1;
             }
+
+            // ===================== 调试模式 =====================
+            // 启动时若根目录下存在 .debug 标记文件（OOOR 主界面「调试模式」勾选时会写入），则自动启用调试模式；
+            // 即便用户没有显式传 --debug。这样 OOOR 端的勾选状态能直接驱动 CLI 行为，
+            // 不用每次都记着加 --debug 参数。CLI 自己用 --debug 也仍然生效。
+            try
+            {
+                string debugFlag = Path.Combine(CoreEnv.ConfigRoot, ".debug");
+                if (File.Exists(debugFlag)) debug = true;
+            }
+            catch { /* 标记文件读取失败不影响启动 */ }
+
+            if (debug) try
+            {
+                // 启动时把 ConfigRoot 路径与 .debug 文件状态打出来，便于排查"为什么开了/没开调试模式"
+                string debugFlag = Path.Combine(CoreEnv.ConfigRoot, ".debug");
+                Console.WriteLine();
+                CliUi.WriteLine(CliUi.Yellow, CliLang.Tf("debugBanner", debugFlag,
+                    File.Exists(debugFlag) ? CliLang.T("debugYes") : CliLang.T("debugNo")));
+            }
+            catch { }
 
             // ===================== 宿主身份 =====================
             // CoreEnv 默认按 Ooor-cli.exe 位置推导（与 ooor 主程序同目录时约定一致）
@@ -125,6 +148,7 @@ namespace Ooor_cli
             _opt.AllowCommand = true;
             _opt.AllowInternet = true;
             _opt.TrustAiJudgment = trust;                  // 默认 false：高危操作一律 Y/N 确认
+            _opt.DebugMode = debug;                        // --debug：打印发给模型的请求体
 
             // 高危操作确认语义按 --trust 区分：开放权限下无需等待用户确认，直接执行；
             // 限制权限下维持 Y/N 弹窗的旧措辞，避免动了旧入口的行为预期。
@@ -186,6 +210,18 @@ namespace Ooor_cli
                 CliUi.Info(CliLang.Tf("sessionLoaded", _session.Title ?? CliLang.Tf("unnamed"), restoredMsgs));
             CliUi.Info(CliLang.T("welcome"));
             Console.WriteLine();
+
+            // ===================== 调试模式详细信息 =====================
+            // 进入调试模式时把 Agent 当前实际启用的工具清单 + 沙盒白名单目录一次性打出来，
+            // 帮助用户在终端确认 "现在跑的工具集 + 文件能落到的位置" 与预期一致。
+            if (debug)
+            {
+                CliUi.WriteLine(CliUi.Yellow, CliLang.Tf("debugEnabledTools", _agent.ToolNames.Length, string.Join("  ", _agent.ToolNames)));
+                CliUi.WriteLine(CliUi.Yellow, CliLang.Tf("debugRootsHeader", _opt.AllowedRoots.Count));
+                foreach (string r in _opt.AllowedRoots) CliUi.Info("  • " + r);
+                CliUi.WriteLine(CliUi.Yellow, CliLang.Tf("debugTempDir", _opt.TempDir ?? ""));
+                Console.WriteLine();
+            }
 
             // 恢复会话：在终端完整回放历史（系统提示词 / 提问 / 回复 / 工具调用与结果）
             if (_session != null) ReplayHistory();

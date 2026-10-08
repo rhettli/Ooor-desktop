@@ -95,6 +95,7 @@ namespace ooor
             this.控制台对话管理ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.agent管理ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.debugModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.控制台ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.打开控制台AI助手ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.打开控制台AI助手继续聊ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -663,7 +664,8 @@ namespace ooor
             this.toolStripSeparator7,
             this.控制台对话管理ToolStripMenuItem,
             this.toolStripSeparator5,
-            this.agent管理ToolStripMenuItem});
+            this.agent管理ToolStripMenuItem,
+            this.debugModeToolStripMenuItem});
             this.模型ToolStripMenuItem.Name = "模型ToolStripMenuItem";
             this.模型ToolStripMenuItem.Size = new System.Drawing.Size(64, 22);
             this.模型ToolStripMenuItem.Text = "模型(&M)";
@@ -710,6 +712,14 @@ namespace ooor
             this.agent管理ToolStripMenuItem.Size = new System.Drawing.Size(240, 22);
             this.agent管理ToolStripMenuItem.Text = "Agent管理";
             this.agent管理ToolStripMenuItem.Click += new System.EventHandler(this.toolStripSplitButton3_ButtonClick);
+            // 
+            // debugModeToolStripMenuItem
+            // 
+            this.debugModeToolStripMenuItem.Name = "debugModeToolStripMenuItem";
+            this.debugModeToolStripMenuItem.Size = new System.Drawing.Size(240, 22);
+            this.debugModeToolStripMenuItem.Text = "调试模式";
+            this.debugModeToolStripMenuItem.CheckOnClick = true;
+            this.debugModeToolStripMenuItem.CheckStateChanged += new System.EventHandler(this.debugModeToolStripMenuItem_CheckStateChanged);
             // 
             // 控制台ToolStripMenuItem
             // 
@@ -961,6 +971,7 @@ namespace ooor
         private System.Windows.Forms.ToolStripMenuItem 保存方案ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 管理方案ToolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem agent管理ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem debugModeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem 控制台对话管理ToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;

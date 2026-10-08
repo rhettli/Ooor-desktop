@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using ooor.Core;
@@ -207,15 +209,44 @@ namespace ooor
         {
             var a = SelectedAgent;
             if (a == null) return;
-            // TODO: 用该 Agent 的配置（模型 / 系统提示词 / 绑定工具）打开聊天窗口。
-            // 当前版本先提示，待聊天窗口支持按 Agent 配置启动后接通。
-            MessageBox.Show(this,
-                string.Format(L.T("agm.chat.body"),
-                    a.Name,
-                    a.DefaultModel ?? L.T("agm.chat.notSet"),
-                    a.BoundTools != null ? a.BoundTools.Count : 0,
-                    a.BoundMcp != null ? a.BoundMcp.Count : 0),
-                L.T("agm.caption.chat"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            string exe = Path.Combine(Application.StartupPath, "Ooor-cli.exe");
+            if (!File.Exists(exe))
+            {
+                MessageBox.Show(this, string.Format(L.T("ccr.msg.cliMissing"), exe),
+                    L.T("agm.caption.chat"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string cwd;
+            try { cwd = LlamaRuntime.ConfigRoot; }
+            catch { cwd = Application.StartupPath; }
+
+            try
+            {
+                // 调试模式：读 app.conf，勾选时给 CLI 传 --debug，打印发给模型的消息和细节
+                bool debug = false;
+                try { debug = AppSettings.Load().DebugMode; } catch { }
+                string debugArg = debug ? " --debug" : "";
+
+                // 用 PowerShell 宿主 + -NoExit 启动 CLI：CLI 退出后窗口保留，便于查看输出；
+                // --agent 按 Agent 名称拉起对应人设（CLI 侧 AgentCatalog.GetByName 加载系统提示词）；
+                // --pause 服务未就绪时停窗不闪退；--root 把工作目录加入沙盒白名单。
+                // 路径与参数值都用单引号包裹，避免 -Command 字符串里的双引号嵌套问题。
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = "-NoExit -NoProfile -Command \"& '" + exe + "' --pause --root '" + cwd + "' --agent '" + a.Name.Replace("'", "''") + "'" + debugArg + "\"",
+                    UseShellExecute = true,
+                    WorkingDirectory = cwd
+                };
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, L.T("agm.caption.chat"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         // ==================== 绑定函数 ====================

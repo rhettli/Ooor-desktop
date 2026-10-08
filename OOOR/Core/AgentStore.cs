@@ -22,6 +22,8 @@ namespace ooor.Core
         public string DefaultModel { get; set; }
         public List<string> BoundTools { get; set; } = new List<string>();
         public List<string> BoundMcp { get; set; } = new List<string>();
+        /// <summary>该 Agent 的沙盒白名单目录（绝对路径）；为空时使用全局白名单（内置 models/config + agent.conf）</summary>
+        public List<string> WriteDirs { get; set; } = new List<string>();
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
@@ -76,6 +78,7 @@ namespace ooor.Core
             a.UpdatedAt = now;
             if (a.BoundTools == null) a.BoundTools = new List<string>();
             if (a.BoundMcp == null) a.BoundMcp = new List<string>();
+            if (a.WriteDirs == null) a.WriteDirs = new List<string>();
             Col.Insert(a.Id, a);
             return a;
         }
@@ -87,6 +90,7 @@ namespace ooor.Core
             a.UpdatedAt = DateTime.Now;
             if (a.BoundTools == null) a.BoundTools = new List<string>();
             if (a.BoundMcp == null) a.BoundMcp = new List<string>();
+            if (a.WriteDirs == null) a.WriteDirs = new List<string>();
             try { return Col.Update(a.Id, a); }
             catch { return false; }
         }

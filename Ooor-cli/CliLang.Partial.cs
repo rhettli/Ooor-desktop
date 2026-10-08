@@ -89,6 +89,7 @@ namespace Ooor_cli
             { "usageSession", "  --session ID    从聊天记录库恢复指定会话，载入历史消息接着聊" },
             { "usageAgent", "  --agent NAME    以指定 Agent 的系统提示词开始一个空白新对话（/new-console 用）" },
             { "usageModel", "  --model PATH    期望模型（实际以服务当前加载的模型为准，仅用于记录）" },
+            { "usageDebug", "  --debug         调试模式：每次请求前把发给模型的消息和工具清单打印到 stderr" },
             { "usageHelp", "  --help          显示本帮助" },
             { "usageRepl", "进入程序后为交互式 REPL，输入 /help 查看会话命令。" },
             { "confirmTitle", "需要确认" },
@@ -105,6 +106,12 @@ namespace Ooor_cli
             { "doubleCtrlC", "再按一次 Ctrl+C 退出窗口；按其他任意键继续输入。" },
             { "sys.confirmTrust", "当前为「开放权限」模式：写文件/删文件/执行命令不需要用户确认，直接执行。即便不再询问，仍应先用一句话说明你打算做什么，首次涉及用户既有文件时尤其要说清楚。" },
             { "sys.confirmNormal", "写文件/删文件/执行命令属于高危操作：每次都会在终端请求用户输入 Y/N 确认，被拒绝时不要原样重试，应说明原因或换方案。" },
+            { "debugBanner", "🔧 调试模式已开启（OOOR 端标记：{0}，存在={1}）。每条请求会额外打印发送的消息和工具清单。" },
+            { "debugYes", "是" },
+            { "debugNo", "否" },
+            { "debugEnabledTools", "🔧 启用的函数（{0} 个）：{1}" },
+            { "debugRootsHeader", "🔧 白名单目录（{0} 个）：" },
+            { "debugTempDir", "🔧 临时工作目录：{0}" },
             { "sys.prompt", "你是运行在用户 Windows 电脑终端里的本地 AI 助手 Ooor-cli，可以调用工具真实地查看与操作文件。不要声称自己无法访问文件系统：需要信息时直接调用对应工具（list_roots / list_directory / read_file / get_app_info 等）。只能访问沙盒白名单目录（默认含当前目录），越权会被拒绝；开始文件操作前先调 list_roots。给文件的 path 参数若只写文件名或相对路径，会自动落到临时工作目录，工具返回值里会给出实际完整路径，请以返回的路径为准。{0}已开启联网工具（web_search / fetch_url），可以联网获取实时信息。回答用简体中文、Markdown 排版，简洁直接，代码放进代码块。" },
         };
 
@@ -184,6 +191,7 @@ namespace Ooor_cli
             { "usageSession", "  --session ID    Restore a session from chat history DB, load messages to continue" },
             { "usageAgent", "  --agent NAME    Start a blank new chat with specified Agent's system prompt (used by /new-console)" },
             { "usageModel", "  --model PATH    Expected model (actual = service loaded model, for record only)" },
+            { "usageDebug", "  --debug         Debug mode: print messages and tools sent to the model to stderr before each request" },
             { "usageHelp", "  --help          Show this help" },
             { "usageRepl", "Interactive REPL after launch, type /help for session commands." },
             { "confirmTitle", "Confirmation needed" },
@@ -200,6 +208,12 @@ namespace Ooor_cli
             { "doubleCtrlC", "Press Ctrl+C again to exit; press any other key to continue." },
             { "sys.confirmTrust", "You are in \"open permission\" mode: writing/deleting files or executing commands does NOT require user confirmation—execute directly. Even without confirmation, always briefly state what you intend to do first, especially when touching existing user files." },
             { "sys.confirmNormal", "Writing/deleting files or executing commands are high-risk operations: each one prompts the user for Y/N confirmation in the terminal. If rejected, do NOT retry the same action—explain why or propose an alternative." },
+            { "debugBanner", "🔧 Debug mode on (OOOR marker: {0}, exists={1}). Outgoing messages and tool list will be printed for each request." },
+            { "debugYes", "yes" },
+            { "debugNo", "no" },
+            { "debugEnabledTools", "🔧 Enabled tools ({0}): {1}" },
+            { "debugRootsHeader", "🔧 Whitelist dirs ({0}):" },
+            { "debugTempDir", "🔧 Temp working dir: {0}" },
             { "sys.prompt", "You are Ooor-cli, a local AI assistant running in the user's Windows terminal. You can call tools to actually view and manipulate files. Do NOT claim you cannot access the filesystem: when you need information, call the relevant tool directly (list_roots / list_directory / read_file / get_app_info, etc.). You may only access sandbox whitelist directories (current directory included by default); out-of-bounds access will be denied. Call list_roots before any file operation. If a file's path argument is just a filename or relative path, it will be resolved to the temp working directory; the tool returns the actual full path—use that returned path. {0}Internet tools are enabled (web_search / fetch_url), so you can fetch real-time information online. Respond in English with Markdown formatting; be concise and direct; put code in code blocks." },
         };
     }

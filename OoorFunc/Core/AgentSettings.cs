@@ -8,10 +8,10 @@ namespace OoorFunc.Core
     /// <summary>
     /// Agent 持久化设置（{ConfigRoot}\agent.conf，key=value 行格式，UTF-8）：
     ///
-    ///   allow_write=true|false      是否注册写入类工具（write_file / create_file / delete_file）
+    ///   allow_write=true|false      是否注册写入类工具（write_file / create_file / edit_file / delete_file / move_file / copy_file / make_directory）
     ///   allow_command=true|false    是否注册执行类工具（run_command / execute_script）
     ///   trust_ai=true|false         危险操作是否允许模型自行判断跳过确认（工具参数 confirm=false 时生效）
-    ///   allow_internet=true|false   是否注册联网工具（web_search / fetch_url）
+    ///   allow_internet=true|false   是否注册联网工具（web_search / fetch_url / download_file）
     ///   root=D:\xxx                 额外沙盒白名单目录（可多行，累加到内置的 models / config 之上）
     ///   max_steps=12                单轮最大步数
     ///

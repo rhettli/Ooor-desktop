@@ -48,6 +48,10 @@ namespace ooor
             // 确定按钮：校验失败时不关闭窗口
             btnOk.Click += (s, e) => { if (!ValidateInput()) DialogResult = DialogResult.None; };
 
+            // 白名单右键菜单
+            tsmiAddDir.Click += (s, e) => AddWriteDir();
+            tsmiRemoveDir.Click += (s, e) => RemoveWriteDir();
+
             LoadData();
         }
 
@@ -64,8 +68,15 @@ namespace ooor
             label1.Text = L.T("age.lbl.userPrompt");
             lblTools.Text = L.T("age.lbl.tools");
             lblMcp.Text = L.T("age.lbl.mcp");
+            label2.Text = L.T("age.lbl.writeDir");
+            tsmiAddDir.Text = L.T("age.cm.addDir");
+            tsmiRemoveDir.Text = L.T("age.cm.removeDir");
             btnOk.Text = L.T("age.btn.ok");
             btnCancel.Text = L.T("age.btn.cancel");
+
+            // 白名单列表列头随语言刷新
+            if (listViewWriteDir.Columns.Count > 0)
+                listViewWriteDir.Columns[0].Text = L.T("age.col.dirPath");
 
             // MCP 列表为空时唯一一项是占位提示
             if (!_hasMcp && clbMcp.Items.Count > 0)
@@ -137,6 +148,27 @@ namespace ooor
             {
                 _hasMcp = true;
             }
+
+            // 白名单目录
+            listViewWriteDir.BeginUpdate();
+            try
+            {
+                listViewWriteDir.Items.Clear();
+                if (_record.WriteDirs != null)
+                {
+                    foreach (string d in _record.WriteDirs)
+                    {
+                        if (string.IsNullOrWhiteSpace(d)) continue;
+                        listViewWriteDir.Items.Add(d);
+                    }
+                }
+                if (listViewWriteDir.Columns.Count == 0)
+                    listViewWriteDir.Columns.Add(L.T("age.col.dirPath"), 500);
+                else
+                    listViewWriteDir.Columns[0].Text = L.T("age.col.dirPath");
+                listViewWriteDir.Columns[0].Width = 520;
+            }
+            finally { listViewWriteDir.EndUpdate(); }
         }
 
         private bool ValidateInput()
@@ -180,6 +212,59 @@ namespace ooor
                 if (clbMcp.GetItemChecked(i))
                     _record.BoundMcp.Add(mcps[i].Id);
             }
+
+            // 白名单目录
+            _record.WriteDirs = new List<string>();
+            foreach (ListViewItem item in listViewWriteDir.Items)
+            {
+                string d = (item.Text ?? "").Trim();
+                if (d.Length > 0) _record.WriteDirs.Add(d);
+            }
+        }
+
+        /// <summary>新增白名单目录：弹 FolderBrowserDialog，选目录后加到列表（去重）</summary>
+        private void AddWriteDir()
+        {
+            using (var dlg = new FolderBrowserDialog())
+            {
+                try { dlg.Description = L.T("age.dlg.addDirDesc"); } catch { }
+                dlg.ShowNewFolderButton = false;
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                string path;
+                try { path = Path.GetFullPath(dlg.SelectedPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar); }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message, L.T("age.caption.prompt"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                foreach (ListViewItem ex in listViewWriteDir.Items)
+                {
+                    if (string.Equals(ex.Text, path, StringComparison.OrdinalIgnoreCase))
+                    {
+                        MessageBox.Show(this, L.T("age.msg.dirExists"), L.T("age.caption.prompt"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+                }
+                listViewWriteDir.Items.Add(path);
+                listViewWriteDir.EnsureVisible(listViewWriteDir.Items.Count - 1);
+            }
+        }
+
+        /// <summary>移除选中白名单目录（支持多选；没选中时禁用或提示）</summary>
+        private void RemoveWriteDir()
+        {
+            if (listViewWriteDir.SelectedItems.Count == 0)
+            {
+                MessageBox.Show(this, L.T("age.msg.selectDirFirst"), L.T("age.caption.prompt"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            listViewWriteDir.BeginUpdate();
+            try
+            {
+                for (int i = listViewWriteDir.SelectedItems.Count - 1; i >= 0; i--)
+                    listViewWriteDir.Items.Remove(listViewWriteDir.SelectedItems[i]);
+            }
+            finally { listViewWriteDir.EndUpdate(); }
         }
 
         private void chkUseSystemPrompt_CheckStateChanged(object sender, EventArgs e)

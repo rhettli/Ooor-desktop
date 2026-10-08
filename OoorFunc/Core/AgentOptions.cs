@@ -93,6 +93,9 @@ namespace OoorFunc.Core
         /// <summary>true：注册联网工具（web_search / fetch_url）；会访问公网，默认关闭。</summary>
         public bool AllowInternet;
 
+        /// <summary>true：调试模式——每次请求 /v1/chat/completions 前，把发给模型的消息和工具清单打印到 stderr。</summary>
+        public bool DebugMode;
+
         /// <summary>单轮最大步数（assistant+tool 算一步；含最终无 tool_calls 的那一步）。</summary>
         public int MaxSteps = 12;
 

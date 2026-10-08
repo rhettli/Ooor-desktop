@@ -36,6 +36,9 @@ namespace ooor.Core
         /// <summary>app.conf 中是否显式设置了 language（false = 首次运行，需弹语言选择）</summary>
         public bool LanguageSet;
 
+        /// <summary>调试模式：CLI 启动时传 --debug，打印系统发给模型的消息和细节</summary>
+        public bool DebugMode;
+
         public static AppSettings Load()
         {
             var s = new AppSettings();
@@ -55,6 +58,7 @@ namespace ooor.Core
                     else if (key == "auto_start_model") s.AutoStartModel = b;
                     else if (key == "auto_start_hide") s.AutoStartHide = b;
                     else if (key == "language") { s.Language = val; s.LanguageSet = true; }
+                    else if (key == "debug_mode") s.DebugMode = b;
                 }
             }
             catch { }
@@ -73,6 +77,7 @@ namespace ooor.Core
                 sb.AppendLine("auto_start_model=" + (AutoStartModel ? "true" : "false"));
                 sb.AppendLine("auto_start_hide=" + (AutoStartHide ? "true" : "false"));
                 sb.AppendLine("language=" + (string.IsNullOrEmpty(Language) ? "zh" : Language));
+                sb.AppendLine("debug_mode=" + (DebugMode ? "true" : "false"));
                 File.WriteAllText(SettingsPath, sb.ToString(), new UTF8Encoding(false));
             }
             catch { }

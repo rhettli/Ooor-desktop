@@ -242,6 +242,9 @@ namespace ooor
             ReloadProfiles();
             RestoreRunningState();
 
+            // 同步调试模式勾选状态（持久化在 app.conf）
+            try { debugModeToolStripMenuItem.Checked = AppSettings.Load().DebugMode; } catch { }
+
             // 开机自启场景：按 AppSettings 决定是否隐藏主窗口 / 自动启动上次模型
             if (AutoStartMode)
             {
@@ -352,6 +355,7 @@ namespace ooor
             控制台对话管理ToolStripMenuItem.Text = L.T("model.consoleChat");
             ToolStripMenuItemConsoleTalkManager.Text = L.T("model.consoleChat");
             agent管理ToolStripMenuItem.Text = L.T("model.agentManage");
+            debugModeToolStripMenuItem.Text = L.T("model.debugMode");
 
             // 方案
             保存方案ToolStripMenuItem.Text = L.T("profile.save");
@@ -1788,6 +1792,45 @@ namespace ooor
         {
             // 管理控制台对话session
             new ConsoleChatRecord().Show(this);
+        }
+
+        private void debugModeToolStripMenuItem_CheckStateChanged(object sender, EventArgs e)
+        {
+            bool ok = false;
+            try
+            {
+                var app = AppSettings.Load();
+                app.DebugMode = debugModeToolStripMenuItem.Checked;
+                app.Save();
+
+                // 同步更新 ConfigRoot 下的 .debug 标记文件：
+                //   - 勾选 → 写入空 .debug
+                //   - 取消 → 删除 .debug
+                // Ooor-cli 启动时只需判断该文件是否存在即可决定是否进入调试模式，
+                // 不依赖读取 app.conf（OOOR 与 CLI 各自看同一个 ConfigRoot）。
+                // 写文件失败也不影响 app.conf 持久化与勾选状态本身。
+                string debugFile = Path.Combine(LlamaRuntime.ConfigRoot, ".debug");
+                if (debugModeToolStripMenuItem.Checked)
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(LlamaRuntime.ConfigRoot);
+                        File.WriteAllText(debugFile, "");
+                    }
+                    catch { /* 标记文件写失败不影响主流程 */ }
+                }
+                else
+                {
+                    try { if (File.Exists(debugFile)) File.Delete(debugFile); } catch { }
+                }
+
+                ok = true;
+            }
+            catch { }
+            if (!ok && IsHandleCreated) BeginInvoke((MethodInvoker)delegate
+            {
+                debugModeToolStripMenuItem.Checked = AppSettings.Load().DebugMode;
+            });
         }
 
         private void ToolStripMenuItemDownloadNewLlama_Click(object sender, EventArgs e)

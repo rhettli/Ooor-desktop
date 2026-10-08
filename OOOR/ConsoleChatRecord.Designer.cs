@@ -64,7 +64,7 @@ namespace ooor
             this.toolStripSeparator1});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(804, 33);
+            this.toolStrip1.Size = new System.Drawing.Size(536, 25);
             this.toolStrip1.TabIndex = 3;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -73,52 +73,52 @@ namespace ooor
             this.btnRefresh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.btnRefresh.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnRefresh.Name = "btnRefresh";
-            this.btnRefresh.Size = new System.Drawing.Size(50, 28);
+            this.btnRefresh.Size = new System.Drawing.Size(36, 22);
             this.btnRefresh.Text = "刷新";
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 33);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
             // 
             // btnContinue
             // 
             this.btnContinue.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.btnContinue.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnContinue.Name = "btnContinue";
-            this.btnContinue.Size = new System.Drawing.Size(68, 28);
+            this.btnContinue.Size = new System.Drawing.Size(48, 22);
             this.btnContinue.Text = "接着聊";
             // 
             // toolStripSeparator4
             // 
             this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 33);
+            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 25);
             // 
             // btnRename
             // 
             this.btnRename.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.btnRename.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnRename.Name = "btnRename";
-            this.btnRename.Size = new System.Drawing.Size(86, 28);
+            this.btnRename.Size = new System.Drawing.Size(60, 22);
             this.btnRename.Text = "修改标题";
             // 
             // toolStripSeparator3
             // 
             this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 33);
+            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 25);
             // 
             // btnDelete
             // 
             this.btnDelete.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.btnDelete.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnDelete.Name = "btnDelete";
-            this.btnDelete.Size = new System.Drawing.Size(50, 28);
+            this.btnDelete.Size = new System.Drawing.Size(36, 22);
             this.btnDelete.Text = "删除";
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 33);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
             // 
             // panelRows
             // 
@@ -128,9 +128,10 @@ namespace ooor
             this.panelRows.AutoScroll = true;
             this.panelRows.BackColor = System.Drawing.Color.White;
             this.panelRows.ContextMenuStrip = this.contextMenuStrip1;
-            this.panelRows.Location = new System.Drawing.Point(0, 33);
+            this.panelRows.Location = new System.Drawing.Point(0, 22);
+            this.panelRows.Margin = new System.Windows.Forms.Padding(2);
             this.panelRows.Name = "panelRows";
-            this.panelRows.Size = new System.Drawing.Size(804, 547);
+            this.panelRows.Size = new System.Drawing.Size(536, 365);
             this.panelRows.TabIndex = 4;
             // 
             // contextMenuStrip1
@@ -143,35 +144,35 @@ namespace ooor
             this.renameToolStripMenuItem,
             this.deleteToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(153, 130);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(125, 98);
             // 
             // continueToolStripMenuItem
             // 
             this.continueToolStripMenuItem.Name = "continueToolStripMenuItem";
-            this.continueToolStripMenuItem.Size = new System.Drawing.Size(152, 30);
+            this.continueToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.continueToolStripMenuItem.Text = "接着聊";
             // 
             // contextMenuSeparator
             // 
             this.contextMenuSeparator.Name = "contextMenuSeparator";
-            this.contextMenuSeparator.Size = new System.Drawing.Size(149, 6);
+            this.contextMenuSeparator.Size = new System.Drawing.Size(121, 6);
             // 
             // refreshToolStripMenuItem
             // 
             this.refreshToolStripMenuItem.Name = "refreshToolStripMenuItem";
-            this.refreshToolStripMenuItem.Size = new System.Drawing.Size(152, 30);
+            this.refreshToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.refreshToolStripMenuItem.Text = "刷新";
             // 
             // renameToolStripMenuItem
             // 
             this.renameToolStripMenuItem.Name = "renameToolStripMenuItem";
-            this.renameToolStripMenuItem.Size = new System.Drawing.Size(152, 30);
+            this.renameToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.renameToolStripMenuItem.Text = "修改标题";
             // 
             // deleteToolStripMenuItem
             // 
             this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
-            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(152, 30);
+            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.deleteToolStripMenuItem.Text = "删除";
             // 
             // lblEmpty
@@ -188,12 +189,13 @@ namespace ooor
             // 
             // ConsoleChatRecord
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(804, 580);
+            this.ClientSize = new System.Drawing.Size(536, 387);
             this.Controls.Add(this.panelRows);
             this.Controls.Add(this.toolStrip1);
-            this.MinimumSize = new System.Drawing.Size(480, 360);
+            this.Margin = new System.Windows.Forms.Padding(2);
+            this.MinimumSize = new System.Drawing.Size(325, 253);
             this.Name = "ConsoleChatRecord";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "控制台聊天记录";
